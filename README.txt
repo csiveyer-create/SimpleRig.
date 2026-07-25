@@ -42,3 +42,31 @@ UPDATE v3 — EQUIPMENT CATALOGUE
 - Add selected equipment to the plan
 - Create a custom item with an uploaded image
 - Save WLL/SWL and MBS data on each placed icon
+
+
+UPDATE v4 - EXPORT, HISTORY AND ICON
+- Single-page PDF export with diagram, equipment specifications and ratio details
+- PNG export for diagram only
+- Zoom range extended down to 50%
+- Undo, redo, duplicate and delete repaired
+- Black home-screen icon with silver S.
+
+
+UPDATE v5 — PRODUCTION DETAILS, MODERN STYLE & TOUCH TARGETS
+- Show Name, Gag/Move Name and Location fields at the top
+- Production details included in PDF reports and export filenames
+- Modern dark glass-style interface with teal accent
+- New icons are generated at 50% of their previous size
+- Enlarged invisible touch targets make small icons easier to grab
+- Touch targets are excluded from exported images and PDFs
+
+
+SIMPLERIG v6
+- App renamed to SimpleRig
+- Zoom, reset and pan moved into the diagram space
+- Expanded catalogue: 159 records
+- Includes Petzl, ISC, Rock Exotica, Harken, Singing Rock and generic rigging items
+- Selecting catalogue equipment now applies its record to the selected diagram object
+- Applying equipment preserves object position, scale, rotation and rope attachment
+- Incomplete records are marked for exact manufacturer/model verification
+- Database supplied separately as equipment-catalogue.json
