@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>SimpleRig</title>
+<style>
+  :root{
+    --bg:#08111f;--bg2:#102136;--panel:rgba(16,29,46,.93);--card:#17283d;
+    --surface:#0e1b2b;--border:#304761;--text:#f4f7fb;--muted:#9fb0c4;
+    --accent:#35d0ba;--accentText:#061310;--accent-soft:rgba(53,208,186,.14);
+    --danger:#ff6b7a;--shadow:0 16px 42px rgba(0,0,0,.25)
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at 15% 0%,rgba(53,208,186,.12),transparent 30%),radial-gradient(circle at 95% 10%,rgba(124,140,255,.15),transparent 32%),linear-gradient(145deg,var(--bg),var(--bg2));color:var(--text);min-height:100vh}
+  #rigApp{padding:14px;max-width:1800px;margin:0 auto}.layout{display:grid;grid-template-columns:190px minmax(0,1fr) 250px;gap:12px;align-items:start}
+  .panel{border:1px solid rgba(159,176,196,.22);background:var(--panel);backdrop-filter:blur(16px);border-radius:18px;padding:12px;box-shadow:var(--shadow)}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;position:sticky;top:8px;z-index:60}
+  button,input,select,label.fileBtn{border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:11px;padding:9px 11px;font-size:14px;transition:border-color .16s,background .16s,transform .12s}
+  input::placeholder{color:#7f91a7}
+  button,label.fileBtn{cursor:pointer;font-weight:600}button:hover,label.fileBtn:hover{border-color:var(--accent);background:#1d324a}button:active,label.fileBtn:active{transform:translateY(1px)}
+  button.active,button.primary{background:linear-gradient(135deg,var(--accent),#76e4d4);color:var(--accentText);border-color:transparent;box-shadow:0 6px 20px rgba(53,208,186,.18)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .assetGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.asset{min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;position:relative;text-align:center;padding:7px;background:linear-gradient(145deg,#17283d,#122136)}
+  .asset svg,.asset img{width:34px;height:34px;object-fit:contain;pointer-events:none}.canvasWrap{position:relative;border:1px solid #38516b;border-radius:18px;overflow:hidden;aspect-ratio:4/3;background:var(--card);box-shadow:0 20px 50px rgba(0,0,0,.28)}
+  #rigCanvas{width:100%;height:100%;display:block;touch-action:none;background:#f8fafc;background-image:linear-gradient(rgba(22,38,58,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(22,38,58,.07) 1px,transparent 1px);background-size:25px 25px}
+  .group{display:grid;gap:8px;margin-bottom:14px}.title{font-weight:750;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:#dce7f4;margin-bottom:8px}.small{font-size:12px;color:var(--muted);line-height:1.45}
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:7px}.metric{border:1px solid var(--border);border-radius:12px;padding:9px;background:linear-gradient(145deg,#17283d,#122136)}.metric b{display:block;font-size:17px}
+  .full{width:100%}.hiddenInput{display:none}.divider{height:1px;background:var(--border);margin:10px 0}
+  .toolbar-separator{width:1px;align-self:stretch;background:var(--border);margin:0 2px}
+  #zoomOutBtn,#zoomInBtn{min-width:40px;font-size:20px;line-height:1}
+  #zoomResetBtn{min-width:64px}
+  #rigCanvas.pan-mode{cursor:grab}
+  #rigCanvas.pan-mode:active{cursor:grabbing}
+  
+  .equipment-search-wrap{position:relative}
+  .equipment-search-wrap input,.custom-item-panel input,.custom-item-panel select{width:100%;box-sizing:border-box}
+  .equipment-suggestions{position:absolute;left:0;right:0;top:100%;z-index:50;display:none;max-height:240px;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:10px}
+  .equipment-suggestions.open{display:block}
+  .equipment-suggestion{display:block;width:100%;text-align:left;padding:10px;border:0;border-bottom:1px solid var(--border);background:transparent}
+  .equipment-suggestion:last-child{border-bottom:0}
+  .equipment-suggestion:hover{background:var(--accent-soft)}
+  .equipment-suggestion strong,.equipment-suggestion span{display:block}
+  .equipment-suggestion span{font-size:12px;opacity:.75;margin-top:2px}
+  .equipment-preview{margin-top:10px;padding:10px;border-radius:10px;background:var(--surface);font-size:13px}
+  .equipment-preview dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 10px;margin:0}
+  .equipment-preview dt{font-weight:700}
+  .equipment-preview dd{margin:0}
+  .button-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .inline-fields{display:grid;grid-template-columns:1fr 90px;gap:8px}
+  .custom-item-panel[hidden]{display:none}
+
+
+  .canvas-controls{position:absolute;z-index:40;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:6px;background:rgba(8,17,31,.82);border:1px solid rgba(159,176,196,.25);border-radius:14px;backdrop-filter:blur(12px);box-shadow:0 8px 24px rgba(0,0,0,.28)}
+  .canvas-controls button{min-width:42px;background:rgba(23,40,61,.92)}
+  .catalogue-count{font-size:12px;color:var(--muted);margin:6px 0 10px}
+  .applied-equipment{border:1px solid var(--border);background:rgba(8,17,31,.55);border-radius:12px;padding:10px;margin-bottom:10px;font-size:12px;line-height:1.45}
+  .verified-badge{color:#75e4d4}.warning-badge{color:#ffc977}
+  .production-details{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;padding:12px 14px}
+  .production-field{display:grid;gap:6px}
+  .production-field label{font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+  .production-field input{width:100%;font-size:15px;background:rgba(8,17,31,.72)}
+  .touch-target{fill:transparent;stroke:none;pointer-events:all}
+  .icon-visual{pointer-events:none}
+  .equipment-preview{background:rgba(8,17,31,.55)}
+  #deleteBtn{border-color:rgba(255,107,122,.55)}
+  #deleteBtn:hover{background:rgba(255,107,122,.12);border-color:var(--danger)}
+  .rig-handle{cursor:grab;touch-action:none}.rig-handle:active{cursor:grabbing}.rig-hit{cursor:pointer}
+  @media(max-width:900px){.layout{grid-template-columns:1fr}.assetGrid{grid-template-columns:repeat(4,minmax(0,1fr))}.production-details{grid-template-columns:1fr}.toolbar{position:relative;top:auto}}
+</style>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#08111f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SimpleRig">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+
+
+<style id="sr3dStyles">
+  .workspace-mode-switch{display:flex;gap:0;margin:10px 14px 0;position:relative;z-index:20}
+  .workspace-mode-switch button{min-width:130px}
+  .workspace-mode-switch button:first-child{border-radius:10px 0 0 10px}
+  .workspace-mode-switch button:last-child{border-radius:0 10px 10px 0}
+  .workspace-mode-switch button.active{background:#1677e8;color:white;border-color:#1677e8}
+  #workspace3d{display:none;margin:12px 14px 18px;grid-template-columns:250px minmax(0,1fr) 270px;gap:12px;align-items:start}
+  #workspace3d.active{display:grid}
+  #workspace2d.hidden-workspace{display:none!important}
+  .sr3-panel{background:#0e1724;border:1px solid #26364b;border-radius:12px;padding:12px;color:#eaf2fb}
+  .sr3-panel h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+  .sr3-equipment-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+  .sr3-equipment-grid button{min-height:70px;padding:6px;font-size:11px;display:grid;place-items:center;gap:4px}
+  .sr3-equipment-grid .glyph{font-size:25px;line-height:1}
+  .sr3-stage-shell{min-width:0}
+  .sr3-stage{position:relative;height:650px;min-height:650px;background:#07101a;border:1px solid #26364b;border-radius:12px;overflow:hidden;contain:layout paint size}
+  #sr3Viewport{position:absolute;inset:0;width:100%;height:100%}
+  #sr3Viewport canvas{position:absolute;inset:0;display:block;width:100%!important;height:100%!important;touch-action:none}
+  .sr3-tools{position:absolute;left:12px;top:12px;z-index:5;display:grid;gap:6px;padding:7px;background:#0b1420e8;border:1px solid #2b3c51;border-radius:9px;transform:none!important;animation:none!important}
+  .sr3-tools button{width:66px;height:58px;padding:4px;display:grid;place-items:center;font-size:20px;animation:none!important;transition:background .12s,border-color .12s}
+  .sr3-tools small{font-size:10px}
+  .sr3-cube{position:absolute;right:12px;top:12px;z-index:5;width:124px;display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:6px;background:#0b1420e8;border:1px solid #2b3c51;border-radius:9px}
+  .sr3-cube button{font-size:10px;padding:8px 3px}
+  .sr3-dims{margin-top:10px;background:#0e1724;border:1px solid #26364b;border-radius:12px;padding:10px}
+  .sr3-tabs{display:flex;margin:-10px -10px 10px}
+  .sr3-tabs button{flex:1;border-radius:0;padding:10px}
+  .sr3-tabs button:first-child{border-radius:11px 0 0 0}.sr3-tabs button:last-child{border-radius:0 11px 0 0}
+  .sr3-tabs button.active,.sr3-tools button.active{background:#1677e8;color:#fff}
+  .sr3-sliders{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .sr3-sliders label{display:grid;grid-template-columns:1fr auto;gap:5px;font-size:12px;color:#aebdca}
+  .sr3-sliders input{grid-column:1/3;width:100%}
+  .sr3-snap{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:12px}
+  .sr3-snap button{padding:6px 9px}.sr3-snap button.active{background:#1677e8;color:#fff}
+  .sr3-field{display:grid;gap:5px;margin-bottom:9px;font-size:12px;color:#aebdca}
+  .sr3-field input,.sr3-field select,.sr3-field textarea{width:100%}
+  .sr3-three{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .sr3-status{font-size:12px;color:#9eb0c0;min-height:18px;margin-top:8px}
+  .sr3-result{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #2b3c51;border-radius:9px;margin-top:10px}
+  .sr3-result strong{font-size:22px;color:#2588ff}
+  @media(max-width:1050px){#workspace3d.active{grid-template-columns:210px minmax(0,1fr)}#sr3Inspector{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.sr3-stage{height:580px;min-height:580px}}
+  @media(max-width:760px){#workspace3d.active{display:block}.sr3-panel{margin-bottom:10px}.sr3-stage{height:520px;min-height:520px}.sr3-sliders{grid-template-columns:1fr}.sr3-equipment-grid{grid-template-columns:repeat(3,1fr)}#sr3Inspector{display:block}}
+</style>
+</head>
+<body>
+<div id="rigApp">
+<div class="workspace-mode-switch" role="tablist"><button id="switch2d" class="active" type="button">2D Plan</button><button id="switch3d" type="button">3D Visualisation</button></div>
+  <div class="panel toolbar">
+    <button id="selectTool" class="active" type="button">Select</button><button id="lineTool" type="button">Line</button><button id="arrowTool" type="button">Arrow</button><button id="textTool" type="button">Text</button>
+    <button id="addRigLineBtn" class="primary" type="button">Add rig line</button><button id="duplicateBtn" type="button">Duplicate</button><button id="deleteBtn" type="button">Delete</button><button id="undoBtn" type="button">Undo</button><button id="redoBtn" type="button">Redo</button>
+    <button id="downloadImageBtn" type="button">Download image</button>
+    <button id="downloadPdfBtn" class="primary" type="button">Download PDF</button>
+  </div>
+  <section class="panel production-details" aria-label="Production details">
+    <div class="production-field"><label for="showName">Show Name</label><input id="showName" type="text" placeholder="Production or show"></div>
+    <div class="production-field"><label for="gagName">Gag/Move Name</label><input id="gagName" type="text" placeholder="Gag, move or shot"></div>
+    <div class="production-field"><label for="locationName">Location</label><input id="locationName" type="text" placeholder="Stage, set or location"></div>
+  </section>
+  <div id="workspace2d" class="layout">
+    <aside class="panel">
+<div class="title">Equipment catalogue</div>
+<label for="equipmentSearch">Search manufacturer or model</label>
+<div class="equipment-search-wrap">
+  <input id="equipmentSearch" type="search" autocomplete="off" placeholder="e.g. Petzl SPIN L1">
+  <div id="equipmentSuggestions" class="equipment-suggestions" role="listbox" aria-label="Equipment suggestions"></div>
+</div>
+<div class="catalogue-count">159 catalogue records · verified data is clearly marked</div><div id="equipmentPreview" class="equipment-preview">Search by manufacturer, model or equipment category.</div>
+<div class="button-row">
+  <button id="addCatalogueItemBtn" class="primary" type="button" disabled>Apply to selected object</button>
+  <button id="openCustomItemBtn" type="button">Create custom item</button>
+</div>
+
+<div id="customItemPanel" class="custom-item-panel" hidden>
+  <div class="divider"></div>
+  <div class="title">Create custom item</div>
+  <label for="customItemName">Item name</label>
+  <input id="customItemName" type="text" placeholder="Custom pulley">
+  <label for="customItemCategory">Category</label>
+  <select id="customItemCategory">
+    <option>Pulley</option>
+    <option>Double pulley</option>
+    <option>Shackle</option>
+    <option>Rope</option>
+    <option>Winch</option>
+    <option>Anchor</option>
+    <option>Truss</option>
+    <option>Rope grab</option>
+    <option>Other</option>
+  </select>
+  <label for="customItemWll">WLL / SWL</label>
+  <div class="inline-fields">
+    <input id="customItemWll" type="number" min="0" step="0.01" placeholder="0">
+    <select id="customItemUnit">
+      <option value="kN">kN</option>
+      <option value="kg">kg</option>
+      <option value="t">t</option>
+    </select>
+  </div>
+  <label for="customItemMbs">Breaking strength / MBS</label>
+  <input id="customItemMbs" type="number" min="0" step="0.01" placeholder="Optional">
+  <label for="customItemImage">Custom image</label>
+  <input id="customItemImage" type="file" accept="image/*">
+  <div class="button-row">
+    <button id="saveCustomItemBtn" type="button">Save custom item</button>
+    <button id="cancelCustomItemBtn" type="button">Cancel</button>
+  </div>
+</div>
+
+<div class="divider"></div>
+<div class="title">Built-in icons</div><div id="builtins" class="assetGrid"></div><div class="divider"></div><div class="title">Custom icons</div>
+      <div class="group"><input id="customName" class="full" type="text" placeholder="Icon name"><label class="fileBtn full" for="customFile">Choose image</label><input id="customFile" class="hiddenInput" type="file" accept="image/png,image/jpeg,image/webp"><button id="addCustomBtn" type="button">Add to toolbar</button></div><div id="customAssets" class="assetGrid"></div>
+    </aside>
+    <section>
+      <div class="canvasWrap">
+        <div class="canvas-controls" aria-label="Diagram navigation">
+          <button id="zoomOutBtn" type="button" aria-label="Zoom out">−</button>
+          <button id="zoomResetBtn" type="button">100%</button>
+          <button id="zoomInBtn" type="button" aria-label="Zoom in">+</button>
+          <button id="panTool" type="button">Pan</button>
+        </div>
+        <svg id="rigCanvas" viewBox="0 0 1000 750" aria-label="SimpleRig drawing canvas"><g id="backgroundLayer"></g><g id="rigLineLayer"></g><g id="drawingLayer"></g><g id="selectionLayer"></g></svg>
+      </div>
+      <p id="status" class="small" aria-live="polite">Select an object, choose catalogue equipment, then apply it. Zoom and pan controls are positioned over the diagram.</p>
+    </section>
+    <aside class="panel">
+      <div class="title">Background</div><div class="group"><label class="fileBtn full" for="backgroundFile">Upload background</label><input id="backgroundFile" class="hiddenInput" type="file" accept="image/*"><label>Opacity<input id="backgroundOpacity" class="full" type="range" min="0.1" max="1" step="0.05" value="1"></label><button id="removeBackground" type="button">Remove background</button></div>
+      <div class="title">Rig line</div><div class="group"><label>Line colour<input id="rigLineColour" class="full" type="color" value="#111827"></label></div>
+      <div class="title">Selected object</div><div id="appliedEquipment" class="applied-equipment">No object selected.</div><div class="group"><label>Name<input id="objectName" class="full" type="text"></label><label>Role<select id="objectRole" class="full"><option value="unassigned">Unassigned</option><option value="fixed">Fixed pulley</option><option value="travelling">Travelling/load pulley</option><option value="redirect">Redirect pulley</option><option value="assist">Haul-assist pulley</option></select></label><label>Load weight (kg)<input id="objectWeight" class="full" type="number" min="0" step="0.1"></label><label>Rotation<input id="rotation" class="full" type="range" min="-180" max="180" value="0"></label><label>Scale<input id="scale" class="full" type="range" min="0.2" max="4" step="0.05" value="1"></label><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px"><button id="attachBtn" class="primary" type="button">Attach to rig line</button><button id="attachEndBtn" type="button">Attach to end</button></div><button id="detachBtn" type="button">Detach from rig line</button></div>
+      <div class="divider"></div><div class="title">Weight calculator</div><div class="group"><label>Load weight (kg)<input id="loadWeight" class="full" type="number" min="0" step="0.1" value="300"></label><label>Main system ratio<select id="mainRatio" class="full"><option value="1">1:1</option><option value="2">2:1</option><option value="3" selected>3:1</option><option value="4">4:1</option><option value="5">5:1</option><option value="6">6:1</option></select></label><label>Haul-assist ratio<select id="assistRatio" class="full"><option value="1">None / 1:1</option><option value="2" selected>2:1 assist</option><option value="3">3:1 assist</option><option value="4">4:1 assist</option></select></label><label>Overall efficiency (%)<input id="efficiency" class="full" type="number" min="10" max="100" value="85"></label></div>
+      <div class="metrics"><div class="metric"><span class="small">Main rope tension</span><b id="mainTension">100 kgf</b></div><div class="metric"><span class="small">Ideal operator pull</span><b id="idealPull">50 kgf</b></div><div class="metric"><span class="small">Estimated operator pull</span><b id="practicalPull">58.8 kgf</b></div><div class="metric"><span class="small">180° assist pulley</span><b id="assistPulleyLoad">117.6 kgf</b></div></div>
+    </aside>
+  </div>
+</div>
+
+<section id="workspace3d" aria-label="3D visualisation workspace">
+  <aside class="sr3-panel">
+    <h3>3D equipment</h3>
+    <div id="sr3Equipment" class="sr3-equipment-grid"></div>
+    <hr>
+    <h3>Environment</h3>
+    <button id="sr3Scan" class="primary" type="button" style="width:100%">Scan environment (LiDAR)</button>
+    <label class="sr3-field">Import scan/model<input id="sr3EnvironmentFile" type="file" accept=".glb,.gltf,.obj,.stl"></label>
+    <label class="sr3-field">Opacity<input id="sr3Opacity" type="range" min="0.1" max="1" step="0.05" value="0.7"></label>
+    <label class="sr3-field">Display mode<select id="sr3EnvMode"><option value="textured">Textured</option><option value="shaded">Shaded</option><option value="wireframe">Wireframe</option></select></label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><button id="sr3EnvHide">Hide</button><button id="sr3EnvGround">Ground</button></div>
+    <div id="sr3EnvStatus" class="sr3-status">No environment loaded.</div>
+  </aside>
+  <section class="sr3-stage-shell">
+    <div class="sr3-stage" id="sr3Stage">
+      <div id="sr3Viewport"></div>
+      <div class="sr3-tools" id="sr3Toolbar">
+        <button data-sr3-tool="select" class="active">↖<small>Select</small></button>
+        <button data-sr3-tool="move">✥<small>Move</small></button>
+        <button data-sr3-tool="rotate">⟳<small>Rotate</small></button>
+        <button data-sr3-tool="scale">⤢<small>Scale</small></button>
+        <button id="sr3Duplicate">▣<small>Duplicate</small></button>
+        <button id="sr3Delete">⌫<small>Delete</small></button>
+        <button id="sr3Hide">◉<small>Hide</small></button>
+        <button id="sr3Lock">▤<small>Lock</small></button>
+      </div>
+      <div class="sr3-cube">
+        <button data-sr3-view="top">TOP</button><button data-sr3-view="front">FRONT</button>
+        <button data-sr3-view="right">RIGHT</button><button data-sr3-view="iso">3D</button>
+      </div>
+    </div>
+    <div class="sr3-dims">
+      <div class="sr3-tabs"><button data-sr3-mode="position" class="active">Position</button><button data-sr3-mode="rotation">Rotation</button><button data-sr3-mode="scale">Scale</button></div>
+      <div class="sr3-sliders">
+        <label><span id="sr3LabelX">X position (m)</span><output id="sr3OutX">0.00</output><input id="sr3X" type="range"></label>
+        <label><span id="sr3LabelY">Y position (m)</span><output id="sr3OutY">0.00</output><input id="sr3Y" type="range"></label>
+        <label><span id="sr3LabelZ">Z position (m)</span><output id="sr3OutZ">0.00</output><input id="sr3Z" type="range"></label>
+      </div>
+      <div class="sr3-snap"><span>Snap</span><button data-sr3-snap="0">Off</button><button data-sr3-snap="0.01">0.01 m</button><button data-sr3-snap="0.05" class="active">0.05 m</button><button data-sr3-snap="0.1">0.10 m</button><button data-sr3-snap="0.25">0.25 m</button><button data-sr3-snap="0.5">0.50 m</button></div>
+    </div>
+  </section>
+  <aside id="sr3Inspector" class="sr3-panel">
+    <div><h3>Selected object</h3><label class="sr3-field">Name<input id="sr3Name"></label><div class="sr3-three"><label class="sr3-field">X<input id="sr3PX" type="number" step="0.05"></label><label class="sr3-field">Y<input id="sr3PY" type="number" step="0.05"></label><label class="sr3-field">Z<input id="sr3PZ" type="number" step="0.05"></label></div></div>
+    <div><h3>Catalogue equipment</h3><div id="sr3CatalogueNotice" class="sr3-status">Use the existing catalogue in 2D Plan, then switch back to 3D. Catalogue data remains in the project.</div><label class="sr3-field">Model<input id="sr3Model" placeholder="Generic"></label><label class="sr3-field">WLL<input id="sr3Wll" placeholder="—"></label><label class="sr3-field">MBS<input id="sr3Mbs" placeholder="—"></label></div>
+    <div><h3>Load calculation</h3><label class="sr3-field">Load (kg)<input id="sr3Load" type="number" value="100"></label><label class="sr3-field">System ratio<input id="sr3Ratio" type="number" min="1" value="3"></label><label class="sr3-field">Efficiency (%)<input id="sr3Efficiency" type="number" min="1" max="100" value="85"></label><div class="sr3-result">Estimated pull <strong id="sr3Pull">39.2 kg</strong></div></div>
+  </aside>
+</section>
+<dialog id="sr3ScanDialog"><h2>LiDAR scanning</h2><p>Direct ARKit LiDAR capture requires the future native iPhone/iPad build. For this GitHub Pages version, scan with Polycam or Scaniverse and import GLB, OBJ or STL.</p><button id="sr3CloseScan" type="button">Close</button></dialog>
+
+<script>
+(() => {
+try {
+  const NS='http://www.w3.org/2000/svg',svg=document.getElementById('rigCanvas'),rigLayer=document.getElementById('rigLineLayer'),drawing=document.getElementById('drawingLayer'),selection=document.getElementById('selectionLayer'),background=document.getElementById('backgroundLayer'),status=document.getElementById('status');
+  let selected=null,selectedRig=null,drag=null,activeHandle=null;
+  let undoStack=[],redoStack=[],gestureBefore=null,controlBefore=null,restoringHistory=false;
+  const baseView={x:0,y:0,w:1000,h:750};
+  let view={...baseView},zoomLevel=1,panMode=false,panDrag=null;
+  const activePointers=new Map();
+  let pinchStart=null;
+  const icons={Winch:'<rect x="10" y="25" width="80" height="50" rx="8"/><circle cx="50" cy="50" r="16"/><path d="M20 25V10M80 25V10M25 84h50"/>',Pulley:'<circle cx="50" cy="52" r="31"/><circle cx="50" cy="52" r="9"/><path d="M50 21V4M42 4h16"/>','Double pulley':'<circle cx="35" cy="53" r="23"/><circle cx="65" cy="53" r="23"/><circle cx="35" cy="53" r="6"/><circle cx="65" cy="53" r="6"/><path d="M50 28V7M42 7h16"/>','Tie-off':'<circle cx="50" cy="50" r="36"/><path d="M18 78L82 22M22 22l56 56M32 50h36"/>',Performer:'<circle cx="50" cy="14" r="10"/><path d="M50 24v31M28 38l22 10 22-10M50 55L31 91M50 55l19 36"/>',Truss:'<rect x="8" y="24" width="84" height="52"/><path d="M8 24l84 52M92 24L8 76M36 24v52M64 24v52"/>','Rope grab':'<path d="M20 16v68M80 16v68M20 35h60M20 65h60"/><circle cx="50" cy="50" r="13"/>',Anchor:'<path d="M50 8v68M34 22h32M18 58c5 21 17 32 32 32s27-11 32-32M18 58l17 5M82 58l-17 5"/><circle cx="50" cy="14" r="7"/>',Camera:'<rect x="13" y="27" width="55" height="46" rx="6"/><circle cx="41" cy="50" r="14"/><path d="M68 39l20-11v44L68 61M25 27l7-12h18l7 12"/>',Telehandler:'<circle cx="26" cy="75" r="12"/><circle cx="72" cy="75" r="12"/><path d="M15 63h68V45H57l-8-20H30v38M58 45l27-29M85 16h10v12H82"/>'};
+  function applyView(){
+    svg.setAttribute('viewBox',`${view.x} ${view.y} ${view.w} ${view.h}`);
+    document.getElementById('zoomResetBtn').textContent=Math.round(zoomLevel*100)+'%';
+  }
+  function clampView(){
+    const maxW=baseView.w*2,maxH=baseView.h*2;
+    view.w=Math.min(maxW,Math.max(baseView.w/6,view.w));
+    view.h=Math.min(maxH,Math.max(baseView.h/6,view.h));
+    zoomLevel=baseView.w/view.w;
+    const minX=baseView.x-(view.w-baseView.w)/2-(view.w*.15),maxX=baseView.x+baseView.w-view.w+(view.w-baseView.w)/2+(view.w*.15);
+    const minY=baseView.y-(view.h-baseView.h)/2-(view.h*.15),maxY=baseView.y+baseView.h-view.h+(view.h-baseView.h)/2+(view.h*.15);
+    view.x=Math.min(maxX,Math.max(minX,view.x));
+    view.y=Math.min(maxY,Math.max(minY,view.y));
+  }
+  function zoomAt(factor,cx=baseView.w/2,cy=baseView.h/2){
+    const oldW=view.w,oldH=view.h;
+    const nextW=oldW/factor,nextH=oldH/factor;
+    const rx=(cx-view.x)/oldW,ry=(cy-view.y)/oldH;
+    view.w=nextW;view.h=nextH;
+    view.x=cx-rx*nextW;view.y=cy-ry*nextH;
+    clampView();applyView();
+    status.textContent=`Zoom ${Math.round(zoomLevel*100)}%. Use Pan or two fingers to move around.`;
+  }
+  function resetZoom(){
+    view={...baseView};zoomLevel=1;applyView();
+    status.textContent='Zoom reset to 100%.';
+  }
+  function screenToSvg(clientX,clientY){
+    const p=svg.createSVGPoint();p.x=clientX;p.y=clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  function pt(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
+  function uid(){return Math.random().toString(36).slice(2,9)}
+  function snapshot(){return JSON.stringify({background:background.innerHTML,rig:rigLayer.innerHTML,drawing:drawing.innerHTML})}
+  function updateHistoryButtons(){document.getElementById('undoBtn').disabled=!undoStack.length;document.getElementById('redoBtn').disabled=!redoStack.length}
+  function commitHistory(before){if(restoringHistory||!before)return;const after=snapshot();if(after!==before){undoStack.push(before);if(undoStack.length>80)undoStack.shift();redoStack=[];updateHistoryButtons()}}
+  function recordAction(fn){const before=snapshot();fn();commitHistory(before)}
+  function rebindAll(){
+    drawing.querySelectorAll('[data-object="true"]').forEach(bindIcon);
+    rigLayer.querySelectorAll('[data-rig="true"]').forEach(g=>{
+      g.querySelectorAll('polyline').forEach(line=>line.addEventListener('pointerdown',e=>{e.stopPropagation();selectRig(g)}));
+      g.querySelectorAll('.rig-handle').forEach(h=>h.addEventListener('pointerdown',e=>{e.stopPropagation();selectRig(g);activeHandle=h;gestureBefore=snapshot();try{svg.setPointerCapture(e.pointerId)}catch(_){}}));
+    });
+  }
+  function restoreSnapshot(state){restoringHistory=true;const data=JSON.parse(state);background.innerHTML=data.background;rigLayer.innerHTML=data.rig;drawing.innerHTML=data.drawing;selection.innerHTML='';selected=null;selectedRig=null;rebindAll();restoringHistory=false}
+  function undo(){if(!undoStack.length){status.textContent='Nothing to undo.';return}const current=snapshot();const previous=undoStack.pop();redoStack.push(current);restoreSnapshot(previous);updateHistoryButtons();status.textContent='Undone.'}
+  function redo(){if(!redoStack.length){status.textContent='Nothing to redo.';return}const current=snapshot();const next=redoStack.pop();undoStack.push(current);restoreSnapshot(next);updateHistoryButtons();status.textContent='Redone.'}
+  function duplicateSelected(){if(!selected){status.textContent='Select an icon to duplicate.';return}const clone=selected.cloneNode(true);clone.dataset.x=String((+selected.dataset.x||0)+35);clone.dataset.y=String((+selected.dataset.y||0)+35);delete clone.dataset.rigId;delete clone.dataset.controlIndex;delete clone.dataset.attachMode;drawing.appendChild(clone);bindIcon(clone);applyTransform(clone);select(clone);status.textContent='Object duplicated.'}
+  function deleteSelection(){
+    if(selected){const target=selected;if(target.dataset.rigId)detachSelected();target.remove();selected=null;selection.innerHTML='';status.textContent='Object deleted.';return}
+    if(selectedRig){const id=selectedRig.dataset.id;drawing.querySelectorAll(`[data-rig-id="${id}"]`).forEach(el=>{delete el.dataset.rigId;delete el.dataset.controlIndex;delete el.dataset.attachMode});selectedRig.remove();selectedRig=null;status.textContent='Rig line deleted.';return}
+    status.textContent='Select an object or rig line to delete.'
+  }
+  function addRigLine(){const n=rigLayer.querySelectorAll('[data-rig="true"]').length,y=300+n*55,g=document.createElementNS(NS,'g');g.dataset.rig='true';g.dataset.id=uid();g.dataset.colour='#111827';g.dataset.points=JSON.stringify([{x:180,y},{x:820,y}]);const hit=document.createElementNS(NS,'polyline');hit.setAttribute('fill','none');hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width','28');hit.classList.add('rig-hit');hit.addEventListener('pointerdown',e=>{e.stopPropagation();selectRig(g)});const path=document.createElementNS(NS,'polyline');path.setAttribute('fill','none');path.setAttribute('stroke','#111827');path.setAttribute('stroke-width','6');path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');path.dataset.visible='true';path.addEventListener('pointerdown',e=>{e.stopPropagation();selectRig(g)});g.append(hit,path);g.append(makeHandle(g.dataset.id,0,180,y),makeHandle(g.dataset.id,1,820,y));rigLayer.appendChild(g);renderRig(g);selectRig(g)}
+  function makeHandle(rid,index,x,y){const c=document.createElementNS(NS,'circle');c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('r','15');c.setAttribute('fill','#2563eb');c.setAttribute('stroke','#fff');c.setAttribute('stroke-width','4');c.classList.add('rig-handle');c.dataset.rigId=rid;c.dataset.pointIndex=index;c.addEventListener('pointerdown',e=>{e.stopPropagation();const rig=rigLayer.querySelector(`[data-id="${rid}"]`);selectRig(rig);activeHandle=c;gestureBefore=snapshot();try{svg.setPointerCapture(e.pointerId)}catch(_){}});return c}
+  function selectRig(g){selectedRig=g;document.getElementById('rigLineColour').value=g.dataset.colour||'#111827';rigLayer.querySelectorAll('[data-rig="true"]').forEach(r=>r.querySelectorAll('.rig-handle').forEach(h=>h.setAttribute('fill',r===g?'#2563eb':'#6b7280')));status.textContent='Rig line selected. Drag either end node or change its colour.'}
+  function renderRig(g){const points=JSON.parse(g.dataset.points),pointString=points.map(p=>`${p.x},${p.y}`).join(' ');g.querySelectorAll('polyline').forEach(p=>p.setAttribute('points',pointString));g.querySelector('[data-visible="true"]').setAttribute('stroke',g.dataset.colour||'#111827');g.querySelectorAll('.rig-handle').forEach(h=>{const p=points[+h.dataset.pointIndex];h.setAttribute('cx',p.x);h.setAttribute('cy',p.y)});drawing.querySelectorAll(`[data-rig-id="${g.dataset.id}"]`).forEach(el=>{const p=points[+el.dataset.controlIndex];if(p){el.dataset.x=p.x;el.dataset.y=p.y;applyTransform(el)}})}
+  function nearestSegment(x,y){let best=null;rigLayer.querySelectorAll('[data-rig="true"]').forEach(rig=>{const points=JSON.parse(rig.dataset.points);for(let i=0;i<points.length-1;i++){const a=points[i],b=points[i+1],dx=b.x-a.x,dy=b.y-a.y,l2=dx*dx+dy*dy||1;let t=((x-a.x)*dx+(y-a.y)*dy)/l2;t=Math.max(0,Math.min(1,t));const px=a.x+t*dx,py=a.y+t*dy,d=Math.hypot(x-px,y-py);if(!best||d<best.d)best={rig,segmentIndex:i,p:{x:px,y:py},d}}});return best}
+  function nearestEndpoint(x,y){let best=null;rigLayer.querySelectorAll('[data-rig="true"]').forEach(rig=>{const points=JSON.parse(rig.dataset.points);[0,points.length-1].forEach(index=>{const p=points[index],d=Math.hypot(x-p.x,y-p.y);if(!best||d<best.d)best={rig,index,p,d}})});return best}
+  function attachEndSelected(){if(!selected){status.textContent='Select an icon first.';return}if(selected.dataset.rigId)detachSelected();const near=nearestEndpoint(+selected.dataset.x,+selected.dataset.y);if(!near){status.textContent='Add a rig line first.';return}selected.dataset.rigId=near.rig.dataset.id;selected.dataset.controlIndex=near.index;selected.dataset.attachMode='end';selected.dataset.x=near.p.x;selected.dataset.y=near.p.y;applyTransform(selected);drawSelection();selectRig(near.rig);status.textContent='Icon attached to a rig-line end. Drag it toward another end to snap across.'}
+  function snapEndAttachedObject(){if(!selected||selected.dataset.attachMode!=='end')return;const near=nearestEndpoint(+selected.dataset.x,+selected.dataset.y);if(!near)return;selected.dataset.rigId=near.rig.dataset.id;selected.dataset.controlIndex=near.index;selected.dataset.x=near.p.x;selected.dataset.y=near.p.y;applyTransform(selected);drawSelection();selectRig(near.rig);status.textContent='Icon snapped to the nearest rig-line end.'}
+  function attachSelected(){if(!selected){status.textContent='Select an icon first.';return}if(selected.dataset.rigId){status.textContent='This icon is already attached.';return}const near=nearestSegment(+selected.dataset.x,+selected.dataset.y);if(!near){status.textContent='Add a rig line first.';return}const points=JSON.parse(near.rig.dataset.points),index=near.segmentIndex+1;points.splice(index,0,{x:near.p.x,y:near.p.y});near.rig.dataset.points=JSON.stringify(points);drawing.querySelectorAll(`[data-rig-id="${near.rig.dataset.id}"]`).forEach(other=>{if(+other.dataset.controlIndex>=index)other.dataset.controlIndex=+other.dataset.controlIndex+1});selected.dataset.rigId=near.rig.dataset.id;selected.dataset.controlIndex=index;selected.dataset.attachMode='line';selected.dataset.x=near.p.x;selected.dataset.y=near.p.y;renderRig(near.rig);drawSelection();selectRig(near.rig);status.textContent='Icon attached. Drag it to manipulate the rig line.'}
+  function detachSelected(){if(!selected||!selected.dataset.rigId){status.textContent='Selected icon is not attached.';return}const rig=rigLayer.querySelector(`[data-id="${selected.dataset.rigId}"]`),index=+selected.dataset.controlIndex;if(rig){const points=JSON.parse(rig.dataset.points);if(index>0&&index<points.length-1)points.splice(index,1);rig.dataset.points=JSON.stringify(points);drawing.querySelectorAll(`[data-rig-id="${rig.dataset.id}"]`).forEach(other=>{if(other!==selected&&+other.dataset.controlIndex>index)other.dataset.controlIndex=+other.dataset.controlIndex-1});renderRig(rig)}delete selected.dataset.rigId;delete selected.dataset.controlIndex;delete selected.dataset.attachMode;status.textContent='Icon detached from rig line.'}
+  function addIcon(name,markup,data){const g=document.createElementNS(NS,'g');Object.assign(g.dataset,{object:'true',name,role:'unassigned',weight:'0',x:'500',y:'375',rotation:'0',scale:'0.5'});const hit=document.createElementNS(NS,'rect');hit.setAttribute('x','-78');hit.setAttribute('y','-78');hit.setAttribute('width','156');hit.setAttribute('height','156');hit.setAttribute('rx','18');hit.classList.add('touch-target');const holder=document.createElementNS(NS,'g');holder.classList.add('icon-visual');holder.setAttribute('transform','translate(-50 -50)');if(data){const im=document.createElementNS(NS,'image');im.setAttribute('href',data);im.setAttribute('width','100');im.setAttribute('height','100');im.setAttribute('preserveAspectRatio','xMidYMid meet');holder.appendChild(im)}else{const s=document.createElementNS(NS,'g');s.setAttribute('fill','none');s.setAttribute('stroke','currentColor');s.setAttribute('stroke-width','5');s.setAttribute('stroke-linecap','round');s.setAttribute('stroke-linejoin','round');s.innerHTML=markup;holder.appendChild(s)}g.append(hit,holder);drawing.appendChild(g);bindIcon(g);select(g);applyTransform(g);status.textContent='Icon added at 50% size. Its enlarged invisible touch area makes it easier to select and drag.';return g}
+  function bindIcon(g){g.addEventListener('pointerdown',e=>{e.stopPropagation();select(g);gestureBefore=snapshot();const p=pt(e);drag={start:p,x:+g.dataset.x,y:+g.dataset.y};try{svg.setPointerCapture(e.pointerId)}catch(_){}})}
+  function applyTransform(g){g.setAttribute('transform',`translate(${g.dataset.x} ${g.dataset.y}) rotate(${g.dataset.rotation}) scale(${g.dataset.scale})`)}
+  function select(g){selected=g;document.getElementById('objectName').value=g.dataset.name||'';document.getElementById('objectRole').value=g.dataset.role||'unassigned';document.getElementById('objectWeight').value=g.dataset.weight||0;document.getElementById('rotation').value=g.dataset.rotation||0;document.getElementById('scale').value=g.dataset.scale||1;drawSelection()}
+  function drawSelection(){selection.innerHTML='';if(!selected)return;let b;try{const visual=selected.querySelector('.icon-visual');b=visual?visual.getBBox():selected.getBBox()}catch{return}const r=document.createElementNS(NS,'rect');r.setAttribute('x',b.x-6);r.setAttribute('y',b.y-6);r.setAttribute('width',b.width+12);r.setAttribute('height',b.height+12);r.setAttribute('transform',selected.getAttribute('transform'));r.setAttribute('fill','none');r.setAttribute('stroke','#2563eb');r.setAttribute('stroke-width','3');r.setAttribute('stroke-dasharray','8 6');selection.appendChild(r)}
+  svg.addEventListener('pointerdown',e=>{
+    activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(activePointers.size===2){
+      const pts=[...activePointers.values()];
+      const a=screenToSvg(pts[0].x,pts[0].y),b=screenToSvg(pts[1].x,pts[1].y);
+      pinchStart={
+        distance:Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y),
+        midpoint:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},
+        view:{...view}
+      };
+      drag=null;activeHandle=null;panDrag=null;
+      return;
+    }
+    if(panMode && e.target===svg){
+      const p=screenToSvg(e.clientX,e.clientY);
+      panDrag={pointerId:e.pointerId,start:p,view:{...view}};
+      try{svg.setPointerCapture(e.pointerId)}catch(_){}
+      return;
+    }
+    if(e.target===svg){selection.innerHTML='';selected=null}
+  });
+  svg.addEventListener('pointermove',e=>{
+    if(activePointers.has(e.pointerId))activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(activePointers.size===2 && pinchStart){
+      const pts=[...activePointers.values()];
+      const distance=Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y);
+      if(distance>0){
+        const factor=distance/pinchStart.distance;
+        const nextW=pinchStart.view.w/factor,nextH=pinchStart.view.h/factor;
+        const rx=(pinchStart.midpoint.x-pinchStart.view.x)/pinchStart.view.w;
+        const ry=(pinchStart.midpoint.y-pinchStart.view.y)/pinchStart.view.h;
+        view.w=nextW;view.h=nextH;
+        view.x=pinchStart.midpoint.x-rx*nextW;
+        view.y=pinchStart.midpoint.y-ry*nextH;
+        clampView();applyView();
+      }
+      return;
+    }
+    if(panDrag && panDrag.pointerId===e.pointerId){
+      const p=screenToSvg(e.clientX,e.clientY);
+      view.x=panDrag.view.x+(panDrag.start.x-p.x);
+      view.y=panDrag.view.y+(panDrag.start.y-p.y);
+      clampView();applyView();
+      return;
+    }
+    const p=pt(e);if(activeHandle){const rig=rigLayer.querySelector(`[data-id="${activeHandle.dataset.rigId}"]`),points=JSON.parse(rig.dataset.points);points[+activeHandle.dataset.pointIndex]={x:p.x,y:p.y};rig.dataset.points=JSON.stringify(points);renderRig(rig);return}if(drag&&selected){const x=drag.x+p.x-drag.start.x,y=drag.y+p.y-drag.start.y;if(selected.dataset.rigId&&selected.dataset.attachMode!=='end'){const rig=rigLayer.querySelector(`[data-id="${selected.dataset.rigId}"]`),points=JSON.parse(rig.dataset.points);points[+selected.dataset.controlIndex]={x,y};rig.dataset.points=JSON.stringify(points);renderRig(rig)}else{selected.dataset.x=x;selected.dataset.y=y;applyTransform(selected);drawSelection()}}});function stopDrag(e){
+    if(e&&activePointers.has(e.pointerId))activePointers.delete(e.pointerId);
+    if(activePointers.size<2)pinchStart=null;
+    if(panDrag&&e&&panDrag.pointerId===e.pointerId)panDrag=null;
+    if(drag&&selected&&selected.dataset.attachMode==='end')snapEndAttachedObject();
+    if(gestureBefore){commitHistory(gestureBefore);gestureBefore=null}
+    drag=null;activeHandle=null;
+  }
+  svg.addEventListener('pointerup',stopDrag);
+  svg.addEventListener('pointercancel',stopDrag);
+  window.addEventListener('pointerup',stopDrag)
+  document.getElementById('zoomInBtn').addEventListener('click',()=>zoomAt(1.25,view.x+view.w/2,view.y+view.h/2));
+  document.getElementById('zoomOutBtn').addEventListener('click',()=>zoomAt(0.8,view.x+view.w/2,view.y+view.h/2));
+  document.getElementById('zoomResetBtn').addEventListener('click',resetZoom);
+  document.getElementById('panTool').addEventListener('click',()=>{
+    panMode=!panMode;
+    document.getElementById('panTool').classList.toggle('active',panMode);
+    svg.classList.toggle('pan-mode',panMode);
+    status.textContent=panMode?'Pan mode on. Drag the blank canvas to move around.':'Pan mode off.';
+  });
+  svg.addEventListener('wheel',e=>{
+    e.preventDefault();
+    const centre=screenToSvg(e.clientX,e.clientY);
+    zoomAt(e.deltaY<0?1.15:0.87,centre.x,centre.y);
+  },{passive:false});
+  let lastTap=0;
+  svg.addEventListener('pointerup',e=>{
+    if(e.pointerType==='touch'){
+      const now=Date.now();
+      if(now-lastTap<320){
+        const centre=screenToSvg(e.clientX,e.clientY);
+        zoomAt(1.5,centre.x,centre.y);
+        lastTap=0;
+      }else lastTap=now;
+    }
+  });
+  
+  const equipmentCatalogue=[{"id":"petzl-spin-s1","manufacturer":"Petzl","model":"SPIN S1","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-spin-s1-open","manufacturer":"Petzl","model":"SPIN S1 OPEN","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-spin-l1","manufacturer":"Petzl","model":"SPIN L1","category":"Pulley","iconName":"Pulley","wll":8,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"8\u201313 mm","efficiency":"95%","verified":true,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-spin-l2","manufacturer":"Petzl","model":"SPIN L2","category":"Double pulley","iconName":"Double pulley","wll":8,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"8\u201313 mm","efficiency":"95%","verified":true,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-spin-l1d","manufacturer":"Petzl","model":"SPIN L1D","category":"Progress capture pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-rescue-s","manufacturer":"Petzl","model":"RESCUE S","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-rescue-m","manufacturer":"Petzl","model":"RESCUE M","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-rollclip-a","manufacturer":"Petzl","model":"ROLLCLIP A","category":"Pulley carabiner","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-rollclip-z","manufacturer":"Petzl","model":"ROLLCLIP Z","category":"Pulley carabiner","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-pro-traxion","manufacturer":"Petzl","model":"PRO TRAXION","category":"Progress capture pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-mini-traxion","manufacturer":"Petzl","model":"MINI TRAXION","category":"Progress capture pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-minder-s1","manufacturer":"Petzl","model":"MINDER S1","category":"Prusik pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-minder-s2","manufacturer":"Petzl","model":"MINDER S2","category":"Double Prusik pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-minder-l1","manufacturer":"Petzl","model":"MINDER L1","category":"Prusik pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-minder-l2","manufacturer":"Petzl","model":"MINDER L2","category":"Double Prusik pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-fixe","manufacturer":"Petzl","model":"FIXE","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-mobile","manufacturer":"Petzl","model":"MOBILE","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-tandem","manufacturer":"Petzl","model":"TANDEM","category":"Transport pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-tandem-speed","manufacturer":"Petzl","model":"TANDEM SPEED","category":"Transport pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-reeve","manufacturer":"Petzl","model":"REEVE","category":"Carriage pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-kootenay","manufacturer":"Petzl","model":"KOOTENAY","category":"Knot-passing pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-rollcab","manufacturer":"Petzl","model":"ROLLCAB","category":"Cable roller","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-twin-release","manufacturer":"Petzl","model":"TWIN RELEASE","category":"Releasable progress-capture pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-jag-system","manufacturer":"Petzl","model":"JAG SYSTEM","category":"Haul system","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-jag-traxion","manufacturer":"Petzl","model":"JAG TRAXION","category":"Progress capture pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"petzl-jag","manufacturer":"Petzl","model":"JAG","category":"Double pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Petzl Professional pulley catalogue"},{"id":"isc-rp248-200-series-compact-rigging-pulley","manufacturer":"ISC","model":"RP248 200-Series Compact Rigging Pulley","category":"Rigging pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-rp251-200-series-small-rigging-pulley","manufacturer":"ISC","model":"RP251 200-Series Small Rigging Pulley","category":"Rigging pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-rp255-200-series-medium-rigging-pulley","manufacturer":"ISC","model":"RP255 200-Series Medium Rigging Pulley","category":"Rigging pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-rp257-200-series-large-rigging-pulley","manufacturer":"ISC","model":"RP257 200-Series Large Rigging Pulley","category":"Rigging pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-small-forged-pulley-13-mm-rope","manufacturer":"ISC","model":"Small Forged Pulley \u2013 13 mm Rope","category":"Rigging pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-small-forged-pulley-16-mm-rope","manufacturer":"ISC","model":"Small Forged Pulley \u2013 16 mm Rope","category":"Rigging pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-small-forged-pulley-20-mm-rope","manufacturer":"ISC","model":"Small Forged Pulley \u2013 20 mm Rope","category":"Rigging pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-small-single-prussik-pulley","manufacturer":"ISC","model":"Small Single Prussik Pulley","category":"Prusik pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-small-double-prussik-pulley","manufacturer":"ISC","model":"Small Double Prussik Pulley","category":"Double Prusik pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-medium-eiger-pulley","manufacturer":"ISC","model":"Medium Eiger Pulley","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-large-eiger-pulley","manufacturer":"ISC","model":"Large Eiger Pulley","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-shear-reduction-pulley","manufacturer":"ISC","model":"Shear Reduction Pulley","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-hitch-minding-pulley","manufacturer":"ISC","model":"Hitch-Minding Pulley","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-r-alf-rescue-pulley","manufacturer":"ISC","model":"R-ALF Rescue Pulley","category":"Auto-locking rescue pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-r-alf-3-1-rescue-system","manufacturer":"ISC","model":"R-ALF 3:1 Rescue System","category":"Haul system","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-r-alf-5-1-rescue-system","manufacturer":"ISC","model":"R-ALF 5:1 Rescue System","category":"Haul system","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-rp037-medium-pulley","manufacturer":"ISC","model":"RP037 Medium Pulley","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-rp048-compact-rigging-pulley","manufacturer":"ISC","model":"RP048 Compact Rigging Pulley","category":"Rigging pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-rp050-forged-rigging-pulley","manufacturer":"ISC","model":"RP050 Forged Rigging Pulley","category":"Rigging pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-rp052-forged-rigging-pulley","manufacturer":"ISC","model":"RP052 Forged Rigging Pulley","category":"Rigging pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-rp060-small-single-prussik-pulley","manufacturer":"ISC","model":"RP060 Small Single Prussik Pulley","category":"Prusik pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-rp701-double-rescue-pulley","manufacturer":"ISC","model":"RP701 Double Rescue Pulley","category":"Double pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"isc-rp705-one-way-locking-double-pulley","manufacturer":"ISC","model":"RP705 One-Way Locking Double Pulley","category":"Progress capture pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"ISC official pulley catalogue"},{"id":"rock-exotica-omni-block-1-1-single","manufacturer":"Rock Exotica","model":"Omni-Block 1.1 Single","category":"Swivel pulley","iconName":"Pulley","wll":5,"wllUnit":"kN","mbs":23,"mbsUnit":"kN","ropeRange":"13 mm","efficiency":"Not published","verified":true,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-omni-block-1-5-single","manufacturer":"Rock Exotica","model":"Omni-Block 1.5 Single","category":"Swivel pulley","iconName":"Pulley","wll":8,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"13 mm","efficiency":"Not published","verified":true,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-omni-block-1-5-double","manufacturer":"Rock Exotica","model":"Omni-Block 1.5 Double","category":"Double swivel pulley","iconName":"Double pulley","wll":8,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"13 mm","efficiency":"Not published","verified":true,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-omni-block-2-0-single","manufacturer":"Rock Exotica","model":"Omni-Block 2.0 Single","category":"Swivel pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check model","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-omni-block-2-0-double","manufacturer":"Rock Exotica","model":"Omni-Block 2.0 Double","category":"Double swivel pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check model","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-omni-block-2-6-single","manufacturer":"Rock Exotica","model":"Omni-Block 2.6 Single","category":"Rigging pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check model","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-omni-block-2-6-double","manufacturer":"Rock Exotica","model":"Omni-Block 2.6 Double","category":"Double rigging pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check model","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-material-handling-omni-block-2-6","manufacturer":"Rock Exotica","model":"Material Handling Omni-Block 2.6","category":"Material handling pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check model","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-material-handling-omni-block-4-5","manufacturer":"Rock Exotica","model":"Material Handling Omni-Block 4.5","category":"Material handling pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check model","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-machined-mini-1-1-single","manufacturer":"Rock Exotica","model":"Machined Mini 1.1 Single","category":"Pulley","iconName":"Pulley","wll":5,"wllUnit":"kN","mbs":30,"mbsUnit":"kN","ropeRange":"11 mm","efficiency":"Not published","verified":true,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-machined-mini-1-1-double","manufacturer":"Rock Exotica","model":"Machined Mini 1.1 Double","category":"Double pulley","iconName":"Double pulley","wll":8,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"11 mm","efficiency":"Not published","verified":true,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-machined-rescue-1-5-single","manufacturer":"Rock Exotica","model":"Machined Rescue 1.5 Single","category":"Rescue pulley","iconName":"Pulley","wll":8,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"13 mm","efficiency":"Not published","verified":true,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-machined-rescue-1-5-double","manufacturer":"Rock Exotica","model":"Machined Rescue 1.5 Double","category":"Double rescue pulley","iconName":"Double pulley","wll":8,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"13 mm","efficiency":"Not published","verified":true,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-hydra","manufacturer":"Rock Exotica","model":"Hydra","category":"Pulley / rig plate","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-kootenay-ultra","manufacturer":"Rock Exotica","model":"Kootenay Ultra","category":"Knot-passing pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-ahp-rig-plate","manufacturer":"Rock Exotica","model":"AHP Rig Plate","category":"Rig plate","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"N/A","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-tri-rig","manufacturer":"Rock Exotica","model":"Tri-Rig","category":"Rig plate","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"N/A","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-penta-plate","manufacturer":"Rock Exotica","model":"Penta Plate","category":"Rig plate","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"N/A","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-rockstar-rig-plate","manufacturer":"Rock Exotica","model":"RockStar Rig Plate","category":"Rig plate","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"N/A","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-bolt-rig-plate","manufacturer":"Rock Exotica","model":"Bolt Rig Plate","category":"Rig plate","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"N/A","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-azorp-rig-plate","manufacturer":"Rock Exotica","model":"Azorp Rig Plate","category":"Rig plate","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"N/A","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-large-rotator-round","manufacturer":"Rock Exotica","model":"Large Rotator Round","category":"Swivel","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"N/A","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"rock-exotica-stainless-rotator-round","manufacturer":"Rock Exotica","model":"Stainless Rotator Round","category":"Swivel","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"N/A","efficiency":"Not published","verified":false,"source":"Rock Exotica official catalogue"},{"id":"harken-wingman-57-mm-single","manufacturer":"Harken","model":"Wingman 57 mm Single","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-wingman-57-mm-double","manufacturer":"Harken","model":"Wingman 57 mm Double","category":"Double pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-wingman-76-mm-single","manufacturer":"Harken","model":"Wingman 76 mm Single","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-wingman-76-mm-double","manufacturer":"Harken","model":"Wingman 76 mm Double","category":"Double pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-wingman-100-mm-single","manufacturer":"Harken","model":"Wingman 100 mm Single","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-wingman-100-mm-double","manufacturer":"Harken","model":"Wingman 100 mm Double","category":"Double pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-wingman-125-mm-single","manufacturer":"Harken","model":"Wingman 125 mm Single","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-wingman-125-mm-double","manufacturer":"Harken","model":"Wingman 125 mm Double","category":"Double pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-wingman-150-mm-single","manufacturer":"Harken","model":"Wingman 150 mm Single","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-wingman-150-mm-double","manufacturer":"Harken","model":"Wingman 150 mm Double","category":"Double pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-76-mm-midrange-ratchet-pulley-in1549ssp","manufacturer":"Harken","model":"76 mm Midrange Ratchet Pulley IN1549SSP","category":"Ratchet pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-lokhead-winch-500","manufacturer":"Harken","model":"LokHead Winch 500","category":"Winch","iconName":"Winch","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-riggers-winch-500","manufacturer":"Harken","model":"Riggers Winch 500","category":"Winch","iconName":"Winch","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-traction-winch-200","manufacturer":"Harken","model":"Traction Winch 200","category":"Winch","iconName":"Winch","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-traction-winch-500","manufacturer":"Harken","model":"Traction Winch 500","category":"Winch","iconName":"Winch","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-ninja-multiascend","manufacturer":"Harken","model":"Ninja Multiascend","category":"Ascender","iconName":"Rope grab","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"harken-ninja-foot-ascender","manufacturer":"Harken","model":"Ninja Foot Ascender","category":"Ascender","iconName":"Rope grab","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Harken Safety & Rescue product range"},{"id":"singing-rock-pulley-extra","manufacturer":"Singing Rock","model":"PULLEY EXTRA","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"94%","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-pulley-large","manufacturer":"Singing Rock","model":"PULLEY LARGE","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-pulley-small","manufacturer":"Singing Rock","model":"PULLEY SMALL","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-pulley-twin","manufacturer":"Singing Rock","model":"PULLEY TWIN","category":"Double pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-pulley-twin-roll","manufacturer":"Singing Rock","model":"PULLEY TWIN ROLL","category":"Double pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-pulley-lock","manufacturer":"Singing Rock","model":"PULLEY LOCK","category":"Progress capture pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-pulley-cam","manufacturer":"Singing Rock","model":"PULLEY CAM","category":"Progress capture pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-pulley-tandem","manufacturer":"Singing Rock","model":"PULLEY TANDEM","category":"Transport pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-pulley-tandem-speed","manufacturer":"Singing Rock","model":"PULLEY TANDEM SPEED","category":"Transport pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-pulley-mini","manufacturer":"Singing Rock","model":"PULLEY MINI","category":"Pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-pulley-prusik","manufacturer":"Singing Rock","model":"PULLEY PRUSIK","category":"Prusik pulley","iconName":"Pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-pulley-double","manufacturer":"Singing Rock","model":"PULLEY DOUBLE","category":"Double pulley","iconName":"Double pulley","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-rigging-plate-1-3","manufacturer":"Singing Rock","model":"RIGGING PLATE 1/3","category":"Rig plate","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-rigging-plate-3-5","manufacturer":"Singing Rock","model":"RIGGING PLATE 3/5","category":"Rig plate","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-rigging-plate-5-8","manufacturer":"Singing Rock","model":"RIGGING PLATE 5/8","category":"Rig plate","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"singing-rock-twister","manufacturer":"Singing Rock","model":"TWISTER","category":"Swivel","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Singing Rock professional catalogue"},{"id":"generic-bow-shackle-0-5-t","manufacturer":"Generic","model":"Bow Shackle 0.5 t","category":"Shackle","iconName":"Anchor","wll":0.5,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-bow-shackle-0-75-t","manufacturer":"Generic","model":"Bow Shackle 0.75 t","category":"Shackle","iconName":"Anchor","wll":0.75,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-bow-shackle-1-t","manufacturer":"Generic","model":"Bow Shackle 1 t","category":"Shackle","iconName":"Anchor","wll":1,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-bow-shackle-1-5-t","manufacturer":"Generic","model":"Bow Shackle 1.5 t","category":"Shackle","iconName":"Anchor","wll":1.5,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-bow-shackle-2-t","manufacturer":"Generic","model":"Bow Shackle 2 t","category":"Shackle","iconName":"Anchor","wll":2,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-bow-shackle-3-25-t","manufacturer":"Generic","model":"Bow Shackle 3.25 t","category":"Shackle","iconName":"Anchor","wll":3.25,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-bow-shackle-4-75-t","manufacturer":"Generic","model":"Bow Shackle 4.75 t","category":"Shackle","iconName":"Anchor","wll":4.75,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-bow-shackle-6-5-t","manufacturer":"Generic","model":"Bow Shackle 6.5 t","category":"Shackle","iconName":"Anchor","wll":6.5,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-bow-shackle-8-5-t","manufacturer":"Generic","model":"Bow Shackle 8.5 t","category":"Shackle","iconName":"Anchor","wll":8.5,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-bow-shackle-12-t","manufacturer":"Generic","model":"Bow Shackle 12 t","category":"Shackle","iconName":"Anchor","wll":12,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-dee-shackle-1-t","manufacturer":"Generic","model":"Dee Shackle 1 t","category":"Shackle","iconName":"Anchor","wll":1,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-dee-shackle-2-t","manufacturer":"Generic","model":"Dee Shackle 2 t","category":"Shackle","iconName":"Anchor","wll":2,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-dee-shackle-3-25-t","manufacturer":"Generic","model":"Dee Shackle 3.25 t","category":"Shackle","iconName":"Anchor","wll":3.25,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-dee-shackle-4-75-t","manufacturer":"Generic","model":"Dee Shackle 4.75 t","category":"Shackle","iconName":"Anchor","wll":4.75,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-screw-pin-shackle","manufacturer":"Generic","model":"Screw Pin Shackle","category":"Shackle","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-bolt-type-shackle","manufacturer":"Generic","model":"Bolt-Type Shackle","category":"Shackle","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-master-link","manufacturer":"Generic","model":"Master Link","category":"Master link","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-pear-link","manufacturer":"Generic","model":"Pear Link","category":"Master link","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-swivel-hoist-ring","manufacturer":"Generic","model":"Swivel Hoist Ring","category":"Anchor point","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-eyebolt","manufacturer":"Generic","model":"Eyebolt","category":"Anchor point","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-beam-clamp","manufacturer":"Generic","model":"Beam Clamp","category":"Anchor point","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-girder-clamp","manufacturer":"Generic","model":"Girder Clamp","category":"Anchor point","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-round-sling-1-t","manufacturer":"Generic","model":"Round Sling 1 t","category":"Textile sling","iconName":"Tie-off","wll":1,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-round-sling-2-t","manufacturer":"Generic","model":"Round Sling 2 t","category":"Textile sling","iconName":"Tie-off","wll":2,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-round-sling-3-t","manufacturer":"Generic","model":"Round Sling 3 t","category":"Textile sling","iconName":"Tie-off","wll":3,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-round-sling-5-t","manufacturer":"Generic","model":"Round Sling 5 t","category":"Textile sling","iconName":"Tie-off","wll":5,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-wire-rope-sling","manufacturer":"Generic","model":"Wire Rope Sling","category":"Wire rope sling","iconName":"Tie-off","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-chain-sling","manufacturer":"Generic","model":"Chain Sling","category":"Chain sling","iconName":"Tie-off","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-steel-wire-rope-6-mm","manufacturer":"Generic","model":"Steel Wire Rope 6 mm","category":"Wire rope","iconName":"Tie-off","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-steel-wire-rope-8-mm","manufacturer":"Generic","model":"Steel Wire Rope 8 mm","category":"Wire rope","iconName":"Tie-off","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-steel-wire-rope-10-mm","manufacturer":"Generic","model":"Steel Wire Rope 10 mm","category":"Wire rope","iconName":"Tie-off","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-steel-wire-rope-12-mm","manufacturer":"Generic","model":"Steel Wire Rope 12 mm","category":"Wire rope","iconName":"Tie-off","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-static-rope-10-5-mm","manufacturer":"Generic","model":"Static Rope 10.5 mm","category":"Rope","iconName":"Tie-off","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-static-rope-11-mm","manufacturer":"Generic","model":"Static Rope 11 mm","category":"Rope","iconName":"Tie-off","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-dyneema-line-6-mm","manufacturer":"Generic","model":"Dyneema Line 6 mm","category":"Rope","iconName":"Tie-off","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-dyneema-line-8-mm","manufacturer":"Generic","model":"Dyneema Line 8 mm","category":"Rope","iconName":"Tie-off","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-box-truss-290-mm","manufacturer":"Generic","model":"Box Truss 290 mm","category":"Truss","iconName":"Truss","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-box-truss-400-mm","manufacturer":"Generic","model":"Box Truss 400 mm","category":"Truss","iconName":"Truss","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-tri-truss-290-mm","manufacturer":"Generic","model":"Tri Truss 290 mm","category":"Truss","iconName":"Truss","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-ladder-truss","manufacturer":"Generic","model":"Ladder Truss","category":"Truss","iconName":"Truss","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-ground-support-tower","manufacturer":"Generic","model":"Ground Support Tower","category":"Truss","iconName":"Truss","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-truss-corner-2-way","manufacturer":"Generic","model":"Truss Corner 2-Way","category":"Truss","iconName":"Truss","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-truss-corner-3-way","manufacturer":"Generic","model":"Truss Corner 3-Way","category":"Truss","iconName":"Truss","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-truss-corner-4-way","manufacturer":"Generic","model":"Truss Corner 4-Way","category":"Truss","iconName":"Truss","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-chain-hoist-250-kg","manufacturer":"Generic","model":"Chain Hoist 250 kg","category":"Hoist","iconName":"Winch","wll":250,"wllUnit":"kg","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-chain-hoist-500-kg","manufacturer":"Generic","model":"Chain Hoist 500 kg","category":"Hoist","iconName":"Winch","wll":500,"wllUnit":"kg","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-chain-hoist-1-t","manufacturer":"Generic","model":"Chain Hoist 1 t","category":"Hoist","iconName":"Winch","wll":1,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-chain-hoist-2-t","manufacturer":"Generic","model":"Chain Hoist 2 t","category":"Hoist","iconName":"Winch","wll":2,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-ratchet-strap-1-t","manufacturer":"Generic","model":"Ratchet Strap 1 t","category":"Tie-down","iconName":"Tie-off","wll":1,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-ratchet-strap-2-t","manufacturer":"Generic","model":"Ratchet Strap 2 t","category":"Tie-down","iconName":"Tie-off","wll":2,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-ratchet-strap-5-t","manufacturer":"Generic","model":"Ratchet Strap 5 t","category":"Tie-down","iconName":"Tie-off","wll":5,"wllUnit":"t","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-load-cell","manufacturer":"Generic","model":"Load Cell","category":"Monitoring","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-dynamometer","manufacturer":"Generic","model":"Dynamometer","category":"Monitoring","iconName":"Anchor","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"},{"id":"generic-spreader-beam","manufacturer":"Generic","model":"Spreader Beam","category":"Lifting beam","iconName":"Truss","wll":null,"wllUnit":"","mbs":null,"mbsUnit":"","ropeRange":"Check manufacturer data","efficiency":"Not published","verified":false,"source":"Generic record \u2014 enter exact manufacturer/model before safety use"}];
+  let selectedCatalogueItem=null;
+  const equipmentSearch=document.getElementById('equipmentSearch');
+  const equipmentSuggestions=document.getElementById('equipmentSuggestions');
+  const equipmentPreview=document.getElementById('equipmentPreview');
+  const addCatalogueItemBtn=document.getElementById('addCatalogueItemBtn');
+
+  function equipmentLabel(item){return `${item.manufacturer} ${item.model}`}
+
+  function renderEquipmentSuggestions(query){
+    const q=query.trim().toLowerCase();
+    equipmentSuggestions.innerHTML='';
+    if(!q){equipmentSuggestions.classList.remove('open');return}
+    const terms=q.split(/\s+/).filter(Boolean);
+    const matches=equipmentCatalogue.filter(item=>{
+      const hay=[item.manufacturer,item.model,item.category,item.source].join(' ').toLowerCase();
+      return terms.every(term=>hay.includes(term));
+    }).slice(0,20);
+    if(!matches.length){
+      const empty=document.createElement('div');
+      empty.className='equipment-preview';
+      empty.textContent='No catalogue match. Create a custom item instead.';
+      equipmentSuggestions.appendChild(empty);
+      equipmentSuggestions.classList.add('open');
+      return;
+    }
+    matches.forEach(item=>{
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='equipment-suggestion';
+      button.setAttribute('role','option');
+      button.innerHTML=`<strong>${equipmentLabel(item)}</strong><span>${item.category} · ${item.wll!=null?'WLL '+item.wll+' '+item.wllUnit:'specification check required'}</span>`;
+      button.addEventListener('click',()=>selectCatalogueItem(item));
+      equipmentSuggestions.appendChild(button);
+    });
+    equipmentSuggestions.classList.add('open');
+  }
+
+  function selectCatalogueItem(item){
+    selectedCatalogueItem=item;
+    equipmentSearch.value=equipmentLabel(item);
+    equipmentSuggestions.classList.remove('open');
+    addCatalogueItemBtn.disabled=false;
+    equipmentPreview.innerHTML=`
+      <dl>
+        <dt>Category</dt><dd>${item.category}</dd>
+        <dt>WLL/SWL</dt><dd>${item.wll!=null?item.wll+' '+item.wllUnit:'Check manufacturer data'}</dd>
+        <dt>MBS</dt><dd>${item.mbs??'Not recorded'} ${item.mbsUnit}</dd>
+        <dt>Rope range</dt><dd>${item.ropeRange}</dd>
+        <dt>Efficiency</dt><dd>${item.efficiency}</dd>
+        <dt>Status</dt><dd>${item.verified?'Manufacturer verified':'Verify before safety use'}</dd>
+      </dl>`;
+  }
+
+
+  function updateAppliedEquipmentPanel(){
+    const panel=document.getElementById('appliedEquipment');
+    if(!selected){panel.textContent='No object selected.';return}
+    if(!selected.dataset.equipmentId){
+      panel.innerHTML=`<strong>${selected.dataset.name||'Object'}</strong><br>No catalogue equipment applied.`;
+      return;
+    }
+    panel.innerHTML=`<strong>${selected.dataset.equipmentName||selected.dataset.name}</strong><br>${selected.dataset.equipmentCategory||''}<br>WLL/SWL: ${selected.dataset.wll||'Check data'} ${selected.dataset.wllUnit||''}<br>MBS: ${selected.dataset.mbs||'Check data'} ${selected.dataset.mbsUnit||''}<br><span class="${selected.dataset.verified==='true'?'verified-badge':'warning-badge'}">${selected.dataset.verified==='true'?'Manufacturer values recorded':'Verify exact model/specification'}</span>`;
+  }
+
+  function applyEquipmentToSelected(item){
+    if(!selected){status.textContent='Select an object on the diagram first.';return}
+    const before=snapshot();
+    Object.assign(selected.dataset,{
+      equipmentId:item.id,
+      equipmentName:equipmentLabel(item),
+      equipmentManufacturer:item.manufacturer,
+      equipmentModel:item.model,
+      equipmentCategory:item.category||'Equipment',
+      equipmentSource:item.source||'',
+      ropeRange:item.ropeRange||'',
+      efficiency:item.efficiency||'',
+      wll:item.wll==null?'':String(item.wll),
+      wllUnit:item.wllUnit||'',
+      mbs:item.mbs==null?'':String(item.mbs),
+      mbsUnit:item.mbsUnit||'',
+      verified:String(!!item.verified),
+      name:equipmentLabel(item)
+    });
+    document.getElementById('objectName').value=selected.dataset.name;
+    updateAppliedEquipmentPanel();
+    drawSelection();
+    commitHistory(before);
+    status.textContent=`Applied ${equipmentLabel(item)} to the selected object. Position, scale, rotation and rope attachment were preserved.`;
+  }
+
+  function addEquipmentRecord(item,imageData=null){
+    const markup=icons[item.iconName]||icons['Anchor']||Object.values(icons)[0];
+    const placed=addIcon(equipmentLabel(item),markup,imageData);
+    Object.assign(placed.dataset,{
+      equipmentId:item.id||`custom-${Date.now()}`,
+      equipmentName:equipmentLabel(item),
+      equipmentCategory:item.category||'Custom',
+      wll:String(item.wll||''),
+      wllUnit:item.wllUnit||'',
+      mbs:String(item.mbs||''),
+      mbsUnit:item.mbsUnit||'',
+      verified:String(!!item.verified)
+    });
+    status.textContent=`Added ${equipmentLabel(item)} to the plan.`;
+  }
+
+  equipmentSearch.addEventListener('input',()=>{
+    selectedCatalogueItem=null;
+    addCatalogueItemBtn.disabled=true;
+    equipmentPreview.textContent='Choose a result from the dropdown.';
+    renderEquipmentSuggestions(equipmentSearch.value);
+  });
+
+  equipmentSearch.addEventListener('keydown',e=>{
+    if(e.key==='Escape')equipmentSuggestions.classList.remove('open');
+  });
+
+  addCatalogueItemBtn.addEventListener('click',()=>{
+    if(selectedCatalogueItem)applyEquipmentToSelected(selectedCatalogueItem);
+  });
+
+  document.addEventListener('pointerdown',e=>{
+    if(!e.target.closest('.equipment-search-wrap'))equipmentSuggestions.classList.remove('open');
+  });
+
+  const customItemPanel=document.getElementById('customItemPanel');
+  document.getElementById('openCustomItemBtn').addEventListener('click',()=>{
+    customItemPanel.hidden=false;
+    document.getElementById('customItemName').focus();
+  });
+  document.getElementById('cancelCustomItemBtn').addEventListener('click',()=>customItemPanel.hidden=true);
+
+  document.getElementById('saveCustomItemBtn').addEventListener('click',()=>{
+    const name=document.getElementById('customItemName').value.trim();
+    if(!name){status.textContent='Enter a name for the custom item.';return}
+    const category=document.getElementById('customItemCategory').value;
+    const wll=Number(document.getElementById('customItemWll').value||0);
+    const unit=document.getElementById('customItemUnit').value;
+    const mbs=Number(document.getElementById('customItemMbs').value||0);
+    const file=document.getElementById('customItemImage').files[0];
+    const item={
+      id:`custom-${Date.now()}`,
+      manufacturer:'Custom',
+      model:name,
+      category,
+      wll,
+      wllUnit:unit,
+      mbs:mbs||null,
+      mbsUnit:mbs?unit:'',
+      verified:false,
+      iconName:'Anchor'
+    };
+    if(file){
+      const reader=new FileReader();
+      reader.onload=()=>{
+        addEquipmentRecord(item,reader.result);
+        customItemPanel.hidden=true;
+      };
+      reader.readAsDataURL(file);
+    }else{
+      addEquipmentRecord(item);
+      customItemPanel.hidden=true;
+    }
+  });
+
+  function renderIcons(){const host=document.getElementById('builtins');Object.entries(icons).forEach(([name,markup])=>{const b=document.createElement('button');b.type='button';b.className='asset';b.innerHTML=`<svg viewBox="0 0 100 100"><g fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">${markup}</g></svg><span>${name}</span>`;b.addEventListener('click',()=>addIcon(name,markup));host.appendChild(b)})}
+  document.getElementById('addRigLineBtn').addEventListener('click',()=>recordAction(addRigLine));document.getElementById('attachBtn').addEventListener('click',()=>recordAction(attachSelected));document.getElementById('attachEndBtn').addEventListener('click',()=>recordAction(attachEndSelected));document.getElementById('detachBtn').addEventListener('click',()=>recordAction(detachSelected));document.getElementById('duplicateBtn').addEventListener('click',()=>recordAction(duplicateSelected));document.getElementById('deleteBtn').addEventListener('click',()=>recordAction(deleteSelection));document.getElementById('undoBtn').addEventListener('click',undo);document.getElementById('redoBtn').addEventListener('click',redo);document.getElementById('rigLineColour').addEventListener('pointerdown',()=>controlBefore=snapshot());document.getElementById('rigLineColour').addEventListener('input',e=>{if(!selectedRig){status.textContent='Select a rig line first.';return}selectedRig.dataset.colour=e.target.value;renderRig(selectedRig)});document.getElementById('rigLineColour').addEventListener('change',()=>{commitHistory(controlBefore);controlBefore=null});
+  document.getElementById('addCustomBtn').addEventListener('click',()=>{const name=document.getElementById('customName').value.trim(),file=document.getElementById('customFile').files[0];if(!name||!file)return;const r=new FileReader();r.onload=()=>{const b=document.createElement('button');b.type='button';b.className='asset';b.innerHTML=`<img src="${r.result}" alt=""><span>${name}</span>`;b.addEventListener('click',()=>addIcon(name,'',r.result));document.getElementById('customAssets').appendChild(b)};r.readAsDataURL(file)});
+  document.getElementById('backgroundFile').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;const before=snapshot();const r=new FileReader();r.onload=()=>{background.innerHTML=`<image id="backgroundImage" href="${r.result}" x="0" y="0" width="1000" height="750" preserveAspectRatio="xMidYMid slice" pointer-events="none" opacity="${document.getElementById('backgroundOpacity').value}"/>`;status.textContent='Background uploaded.';commitHistory(before)};r.readAsDataURL(file)});document.getElementById('backgroundOpacity').addEventListener('input',e=>document.getElementById('backgroundImage')?.setAttribute('opacity',e.target.value));document.getElementById('removeBackground').addEventListener('click',()=>recordAction(()=>background.innerHTML=''));
+  function historyControl(id,event,fn){const el=document.getElementById(id);el.addEventListener('focus',()=>controlBefore=snapshot());el.addEventListener('pointerdown',()=>{if(!controlBefore)controlBefore=snapshot()});el.addEventListener(event,fn);el.addEventListener('change',()=>{commitHistory(controlBefore);controlBefore=null});el.addEventListener('blur',()=>{commitHistory(controlBefore);controlBefore=null})}historyControl('objectName','input',e=>{if(selected)selected.dataset.name=e.target.value});historyControl('objectRole','change',e=>{if(selected)selected.dataset.role=e.target.value});historyControl('objectWeight','input',e=>{if(selected)selected.dataset.weight=e.target.value});historyControl('rotation','input',e=>{if(selected){selected.dataset.rotation=e.target.value;applyTransform(selected);drawSelection()}});historyControl('scale','input',e=>{if(selected){selected.dataset.scale=e.target.value;applyTransform(selected);drawSelection()}});
+  function cleanExportSvg(){
+    const clone=svg.cloneNode(true);clone.setAttribute('viewBox','0 0 1000 750');clone.setAttribute('width','1000');clone.setAttribute('height','750');
+    const sel=clone.querySelector('#selectionLayer');if(sel)sel.innerHTML='';
+    clone.querySelectorAll('.rig-handle,.rig-hit,.touch-target').forEach(el=>el.remove());
+    clone.querySelectorAll('[data-visible="true"]').forEach(el=>el.setAttribute('vector-effect','non-scaling-stroke'));
+    const bgRect=document.createElementNS(NS,'rect');bgRect.setAttribute('x','0');bgRect.setAttribute('y','0');bgRect.setAttribute('width','1000');bgRect.setAttribute('height','750');bgRect.setAttribute('fill','#ffffff');clone.insertBefore(bgRect,clone.firstChild);
+    return new XMLSerializer().serializeToString(clone)
+  }
+  async function diagramCanvas(scaleFactor=2){
+    const source=cleanExportSvg(),blob=new Blob([source],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob),img=new Image();
+    await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});
+    const canvas=document.createElement('canvas');canvas.width=1000*scaleFactor;canvas.height=750*scaleFactor;const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);URL.revokeObjectURL(url);return canvas
+  }
+  function downloadBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+  async function downloadDiagramImage(){try{status.textContent='Creating diagram image...';const canvas=await diagramCanvas(2);canvas.toBlob(blob=>{const base=[document.getElementById('showName').value,document.getElementById('gagName').value].filter(Boolean).join('-').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-|-$/g,'')||'rig-plan';downloadBlob(blob,base+'-diagram.png');status.textContent='Diagram image downloaded.'},'image/png')}catch(err){status.textContent='Image export failed: '+err.message}}
+  function pdfEscape(text){return String(text).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)').replace(/[^\x20-\x7E]/g,'-')}
+  function base64Bytes(dataUrl){const raw=atob(dataUrl.split(',')[1]),out=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);return out}
+  function buildSinglePagePdf(jpegBytes,imgW,imgH,equipment,ratio,details){
+    const enc=new TextEncoder(),parts=[],offsets=[0];let length=0;
+    const push=x=>{const b=typeof x==='string'?enc.encode(x):x;parts.push(b);length+=b.length};
+    push('%PDF-1.4\n%PDF\n');
+    function obj(n,body){offsets[n]=length;push(`${n} 0 obj\n`);push(body);push('\nendobj\n')}
+    obj(1,'<< /Type /Catalog /Pages 2 0 R >>');obj(2,'<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    obj(3,'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 841.89 595.28] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> /XObject << /Im1 4 0 R >> >> /Contents 7 0 R >>');
+    offsets[4]=length;push(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${imgW} /Height ${imgH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`);push(jpegBytes);push('\nendstream\nendobj\n');
+    obj(5,'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');obj(6,'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+    const c=[];const t=(x,y,size,text,bold=false)=>c.push(`BT /${bold?'F2':'F1'} ${size} Tf ${x} ${y} Td (${pdfEscape(text)}) Tj ET`);
+    t(28,570,18,details.show||'Rig Plan',true);t(650,570,8,new Date().toLocaleDateString('en-GB'));if(details.gag)t(28,554,10,`Gag/Move: ${details.gag}`,true);if(details.location)t(300,554,10,`Location: ${details.location}`,false);
+    c.push('q 0.72 0 0 0.72 28 235 cm /Im1 Do Q');
+    t(570,530,11,'Ratio details',true);t(570,512,9,`Load: ${ratio.load} kg`);t(570,497,9,`Main ratio: ${ratio.main}:1`);t(570,482,9,`Haul assist: ${ratio.assist}:1`);t(570,467,9,`Efficiency: ${ratio.eff}%`);t(570,452,9,`Main tension: ${ratio.tension}`);t(570,437,9,`Estimated pull: ${ratio.pull}`);
+    t(28,213,12,'Equipment used',true);c.push('0.75 G 28 205 m 814 205 l S 0 G');
+    const rows=equipment.length?equipment:[{name:'No catalogue equipment recorded',category:'',wll:'',mbs:'',count:1}];
+    let y=188;const maxRows=13;rows.slice(0,maxRows).forEach((r,i)=>{t(30,y,8,`${r.count}x ${r.name}`,true);t(265,y,8,r.category||'');t(420,y,8,r.wll?`WLL ${r.wll}`:'WLL not recorded');t(570,y,8,r.mbs?`MBS ${r.mbs}`:'MBS not recorded');y-=14});
+    if(rows.length>maxRows)t(30,y,8,`+ ${rows.length-maxRows} additional equipment types (not shown)`,false);
+    t(28,18,7,'Planning aid only. Verify manufacturer data, configuration ratings and calculations before use.');
+    const stream=c.join('\n');obj(7,`<< /Length ${enc.encode(stream).length} >>\nstream\n${stream}\nendstream`);
+    const xref=length;push(`xref\n0 8\n0000000000 65535 f \n`);for(let i=1;i<=7;i++)push(String(offsets[i]).padStart(10,'0')+' 00000 n \n');push(`trailer\n<< /Size 8 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+    const out=new Uint8Array(length);let pos=0;parts.forEach(b=>{out.set(b,pos);pos+=b.length});return new Blob([out],{type:'application/pdf'})
+  }
+  function equipmentSummary(){const map=new Map();drawing.querySelectorAll('[data-object="true"]').forEach(el=>{const name=el.dataset.equipmentName||el.dataset.name||'Unnamed item',key=[name,el.dataset.wll,el.dataset.wllUnit,el.dataset.mbs,el.dataset.mbsUnit].join('|');if(!map.has(key))map.set(key,{name,category:el.dataset.equipmentCategory||el.dataset.role||'',wll:el.dataset.wll?`${el.dataset.wll} ${el.dataset.wllUnit||''}`:'',mbs:el.dataset.mbs?`${el.dataset.mbs} ${el.dataset.mbsUnit||''}`:'',count:0});map.get(key).count++});return [...map.values()]}
+  async function downloadRigPdf(){try{status.textContent='Creating single-page PDF...';const canvas=await diagramCanvas(1.5),jpeg=canvas.toDataURL('image/jpeg',0.9),ratio={load:document.getElementById('loadWeight').value||0,main:document.getElementById('mainRatio').value||1,assist:document.getElementById('assistRatio').value||1,eff:document.getElementById('efficiency').value||100,tension:document.getElementById('mainTension').textContent,pull:document.getElementById('practicalPull').textContent},details={show:document.getElementById('showName').value.trim(),gag:document.getElementById('gagName').value.trim(),location:document.getElementById('locationName').value.trim()},pdf=buildSinglePagePdf(base64Bytes(jpeg),canvas.width,canvas.height,equipmentSummary(),ratio,details),base=[details.show,details.gag].filter(Boolean).join('-').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-|-$/g,'')||'rig-plan';downloadBlob(pdf,base+'-report.pdf');status.textContent='Single-page PDF downloaded.'}catch(err){console.error(err);status.textContent='PDF export failed: '+err.message}}
+    document.getElementById('downloadImageBtn').addEventListener('click',downloadDiagramImage);document.getElementById('downloadPdfBtn').addEventListener('click',downloadRigPdf);
+  ['showName','gagName','locationName'].forEach(id=>{const field=document.getElementById(id);field.value=localStorage.getItem('rigPlan.'+id)||'';field.addEventListener('input',()=>localStorage.setItem('rigPlan.'+id,field.value))});function calc(){const load=+document.getElementById('loadWeight').value||0,main=+document.getElementById('mainRatio').value||1,assist=+document.getElementById('assistRatio').value||1,eff=Math.max(.1,(+document.getElementById('efficiency').value||100)/100),mainTension=load/main,ideal=mainTension/assist,practical=ideal/eff;document.getElementById('mainTension').textContent=mainTension.toFixed(1)+' kgf';document.getElementById('idealPull').textContent=ideal.toFixed(1)+' kgf';document.getElementById('practicalPull').textContent=practical.toFixed(1)+' kgf';document.getElementById('assistPulleyLoad').textContent=(practical*2).toFixed(1)+' kgf'}['loadWeight','mainRatio','assistRatio','efficiency'].forEach(id=>document.getElementById(id).addEventListener('input',calc));applyView();renderIcons();addRigLine();calc();updateHistoryButtons();
+} catch (error) { console.error(error); const s=document.getElementById('status'); if(s) s.textContent='Startup error: '+error.message; }
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./service-worker.js').catch(function (error) {
+      console.warn('Service worker registration failed:', error);
+    });
+  });
+}
+</script>
+
+
+<script type="module" id="sr3Module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/+esm';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js/+esm';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js/+esm';
+import { OBJLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/OBJLoader.js/+esm';
+import { STLLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/STLLoader.js/+esm';
+
+const q=id=>document.getElementById(id);
+const workspace2d=q('workspace2d'), workspace3d=q('workspace3d'), b2=q('switch2d'), b3=q('switch3d');
+let started=false;
+function showMode(mode){
+  const is3=mode==='3d';
+  workspace2d.classList.toggle('hidden-workspace',is3);
+  workspace3d.classList.toggle('active',is3);
+  b2.classList.toggle('active',!is3); b3.classList.toggle('active',is3);
+  if(is3){ if(!started){init3D();started=true;} else setTimeout(resizeRenderer,0); }
+}
+b2.addEventListener('click',()=>showMode('2d')); b3.addEventListener('click',()=>showMode('3d'));
+
+let renderer,scene,camera,orbit,raycaster,pointer,selected=null,environment=null,environmentHidden=false;
+const objects=[], ropes=[]; let tool='select', transformMode='position', snap=.05, seq=1;
+const typeList=[['pulley','Pulley','◉'],['carabiner','Carabiner','⬭'],['shackle','Shackle','∩'],['ropegrab','Rope grab','◌'],['bollard','Bollard','▥'],['descender','Descender','⊙'],['spinlock','Spinlock','◍'],['truss','Truss','▧'],['winch','Winch','▣'],['performer','Performer','♙']];
+const metal=()=>new THREE.MeshStandardMaterial({color:0x727d87,metalness:.72,roughness:.3});
+const dark=()=>new THREE.MeshStandardMaterial({color:0x151b21,metalness:.5,roughness:.42});
+const black=()=>new THREE.MeshStandardMaterial({color:0x06090c,roughness:.72});
+const white=()=>new THREE.MeshStandardMaterial({color:0xd6d9dc,roughness:.8});
+function mesh(g,geo,mat,p=[0,0,0],r=[0,0,0]){const m=new THREE.Mesh(geo,mat);m.position.set(...p);m.rotation.set(...r);g.add(m);return m}
+function between(a,b,r,mat){const d=new THREE.Vector3().subVectors(b,a),m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),12),mat);m.position.copy(a).add(b).multiplyScalar(.5);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return m}
+function model(kind){const g=new THREE.Group(),M=metal(),D=dark(),B=black(),W=white();
+ if(kind==='pulley'){mesh(g,new THREE.CylinderGeometry(.34,.34,.16,36),D,[0,0,0],[0,0,Math.PI/2]);mesh(g,new THREE.TorusGeometry(.28,.035,10,32),M,[0,0,0],[0,Math.PI/2,0]);mesh(g,new THREE.BoxGeometry(.08,.95,.66),M,[-.28,0,0]);mesh(g,new THREE.BoxGeometry(.08,.95,.66),M,[.28,0,0]);mesh(g,new THREE.TorusGeometry(.16,.05,10,28),M,[0,.62,0],[0,Math.PI/2,0]);}
+ else if(kind==='carabiner'){mesh(g,new THREE.TorusGeometry(.31,.055,12,36),M);mesh(g,new THREE.BoxGeometry(.11,.42,.11),new THREE.MeshStandardMaterial({color:0xd28222}),[.25,.05,0],[0,0,-.38]);}
+ else if(kind==='shackle'){mesh(g,new THREE.TorusGeometry(.31,.065,12,36,Math.PI*1.55),M,[0,0,0],[0,0,-.35]);mesh(g,new THREE.CylinderGeometry(.075,.075,.72,20),M,[0,.22,0],[0,0,Math.PI/2]);}
+ else if(kind==='ropegrab'){mesh(g,new THREE.BoxGeometry(.42,.72,.3),M);mesh(g,new THREE.CylinderGeometry(.17,.17,.32,24),D,[0,.06,0],[Math.PI/2,0,0]);mesh(g,new THREE.TorusGeometry(.12,.04,10,24),D,[0,-.46,0]);}
+ else if(kind==='bollard'){mesh(g,new THREE.CylinderGeometry(.35,.42,.12,28),D,[0,.06,0]);mesh(g,new THREE.CylinderGeometry(.18,.22,.9,28),M,[0,.55,0]);mesh(g,new THREE.CylinderGeometry(.3,.3,.1,28),D,[0,1.02,0]);}
+ else if(kind==='descender'){mesh(g,new THREE.CylinderGeometry(.38,.38,.12,32),D,[0,0,0],[Math.PI/2,0,0]);mesh(g,new THREE.CylinderGeometry(.12,.12,.2,20),M,[0,0,.02],[Math.PI/2,0,0]);}
+ else if(kind==='spinlock'){mesh(g,new THREE.CylinderGeometry(.34,.44,.16,32),D,[0,.08,0]);mesh(g,new THREE.CylinderGeometry(.22,.26,.45,32),B,[0,.38,0]);mesh(g,new THREE.TorusGeometry(.28,.045,10,30),new THREE.MeshStandardMaterial({color:0xa82020}),[0,.35,0],[Math.PI/2,0,0]);}
+ else if(kind==='truss'){const L=3.5;[[-.25,-.25],[-.25,.25],[.25,-.25],[.25,.25]].forEach(([y,z])=>mesh(g,new THREE.CylinderGeometry(.045,.045,L,10),M,[0,y,z],[0,0,Math.PI/2]));for(let x=-1.5;x<1.6;x+=.5){g.add(between(new THREE.Vector3(x,-.25,-.25),new THREE.Vector3(x+.5,.25,.25),.025,D));g.add(between(new THREE.Vector3(x,.25,-.25),new THREE.Vector3(x+.5,-.25,.25),.025,D));}}
+ else if(kind==='winch'){mesh(g,new THREE.BoxGeometry(1.8,.14,1.15),D,[0,-.5,0]);mesh(g,new THREE.BoxGeometry(.16,1.3,1.05),D,[-.8,.05,0]);mesh(g,new THREE.BoxGeometry(.16,1.3,1.05),D,[.8,.05,0]);mesh(g,new THREE.CylinderGeometry(.43,.43,.95,40),M,[0,.2,0],[0,0,Math.PI/2]);mesh(g,new THREE.CylinderGeometry(.56,.56,.08,40),D,[-.51,.2,0],[0,0,Math.PI/2]);mesh(g,new THREE.CylinderGeometry(.56,.56,.08,40),D,[.51,.2,0],[0,0,Math.PI/2]);for(let i=-7;i<=7;i++)mesh(g,new THREE.TorusGeometry(.31,.018,6,30),M,[i*.055,.2,0],[0,Math.PI/2,0]);}
+ else if(kind==='performer'){mesh(g,new THREE.SphereGeometry(.25,22,22),W,[0,2.02,0]);mesh(g,new THREE.CapsuleGeometry(.3,.95,8,18),W,[0,1.25,0]);g.add(between(new THREE.Vector3(-.2,1.55,0),new THREE.Vector3(-.72,.92,0),.085,W));g.add(between(new THREE.Vector3(.2,1.55,0),new THREE.Vector3(.72,.92,0),.085,W));g.add(between(new THREE.Vector3(-.14,.85,0),new THREE.Vector3(-.28,.05,0),.1,W));g.add(between(new THREE.Vector3(.14,.85,0),new THREE.Vector3(.28,.05,0),.1,W));g.add(between(new THREE.Vector3(-.19,1.78,.24),new THREE.Vector3(-.25,.78,.25),.045,B));g.add(between(new THREE.Vector3(.19,1.78,.24),new THREE.Vector3(.25,.78,.25),.045,B));[1.47,1.18,.9].forEach(y=>mesh(g,new THREE.BoxGeometry(.58,.065,.09),B,[0,y,.27]));g.add(between(new THREE.Vector3(-.24,1.55,.25),new THREE.Vector3(.18,1.28,.27),.035,B));g.add(between(new THREE.Vector3(.24,1.55,.25),new THREE.Vector3(-.18,1.28,.27),.035,B));g.add(between(new THREE.Vector3(-.22,.78,.2),new THREE.Vector3(-.33,.28,.12),.045,B));g.add(between(new THREE.Vector3(.22,.78,.2),new THREE.Vector3(.33,.28,.12),.045,B));}
+ return g}
+function add(kind){const name=typeList.find(x=>x[0]===kind)[1]+' '+seq;const group=model(kind),o={id:'3D-'+seq++,kind,name,group,position:group.position,rotation:group.rotation,scale:1,hidden:false,locked:false,model:'Generic',wll:'—',mbs:'—'};group.userData.rootId=o.id;group.position.set((objects.length%4)-1.5,kind==='performer'?0:1,Math.floor(objects.length/4)-.5);scene.add(group);objects.push(o);select(o)}
+function select(o){selected=o;syncUI()}
+function syncUI(){if(!selected){['sr3Name','sr3PX','sr3PY','sr3PZ','sr3Model','sr3Wll','sr3Mbs'].forEach(id=>q(id).value='');return}q('sr3Name').value=selected.name;q('sr3PX').value=selected.group.position.x.toFixed(2);q('sr3PY').value=selected.group.position.y.toFixed(2);q('sr3PZ').value=selected.group.position.z.toFixed(2);q('sr3Model').value=selected.model;q('sr3Wll').value=selected.wll;q('sr3Mbs').value=selected.mbs;syncSliders()}
+function syncSliders(){if(!selected)return;let vals,labs,ranges;if(transformMode==='position'){vals=[selected.group.position.x,selected.group.position.y,selected.group.position.z];labs=['X position (m)','Y position (m)','Z position (m)'];ranges=[[-10,10,.05],[0,10,.05],[-10,10,.05]]}else if(transformMode==='rotation'){vals=['x','y','z'].map(k=>THREE.MathUtils.radToDeg(selected.group.rotation[k]));labs=['X rotation (°)','Y rotation (°)','Z rotation (°)'];ranges=[[-180,180,1],[-180,180,1],[-180,180,1]]}else{vals=[selected.scale,selected.scale,selected.scale];labs=['Uniform scale','Uniform scale','Uniform scale'];ranges=[[.1,5,.05],[.1,5,.05],[.1,5,.05]]}['X','Y','Z'].forEach((k,i)=>{const s=q('sr3'+k);s.min=ranges[i][0];s.max=ranges[i][1];s.step=ranges[i][2];s.value=vals[i];q('sr3Out'+k).value=Number(vals[i]).toFixed(transformMode==='rotation'?0:2);q('sr3Label'+k).textContent=labs[i]})}
+function init3D(){
+ scene=new THREE.Scene();scene.background=new THREE.Color(0x07101a);camera=new THREE.PerspectiveCamera(45,1,.01,2000);camera.position.set(8,6,10);renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));q('sr3Viewport').appendChild(renderer.domElement);orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.target.set(0,1.4,0);orbit.screenSpacePanning=true;scene.add(new THREE.HemisphereLight(0xffffff,0x172334,2.2));const sun=new THREE.DirectionalLight(0xffffff,2.5);sun.position.set(8,12,7);scene.add(sun);scene.add(new THREE.GridHelper(30,60,0x4c6073,0x243444));raycaster=new THREE.Raycaster();pointer=new THREE.Vector2();
+ typeList.forEach(([k,n,glyph])=>{const b=document.createElement('button');b.type='button';b.innerHTML='<span class="glyph">'+glyph+'</span><span>'+n+'</span>';b.addEventListener('click',()=>add(k));q('sr3Equipment').appendChild(b)});
+ renderer.domElement.addEventListener('pointerup',pick);window.addEventListener('resize',resizeRenderer,{passive:true});bind3D();
+ add('truss');objects.at(-1).group.position.set(0,4.3,-.5);add('pulley');objects.at(-1).group.position.set(0,3.25,-.5);add('performer');objects.at(-1).group.position.set(0,0,-.5);add('winch');objects.at(-1).group.position.set(3.4,.55,-2.2);select(objects[2]);resizeRenderer();animate();
+}
+function resizeRenderer(){if(!renderer)return;const stage=q('sr3Stage');const w=Math.max(320,stage.clientWidth),h=Math.max(400,stage.clientHeight);const canvas=renderer.domElement;if(canvas.width!==Math.floor(w*renderer.getPixelRatio())||canvas.height!==Math.floor(h*renderer.getPixelRatio()))renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+function animate(){requestAnimationFrame(animate);orbit.update();renderer.render(scene,camera)}
+function pick(e){if(tool!=='select')return;const r=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-r.left)/r.width)*2-1;pointer.y=-((e.clientY-r.top)/r.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(objects.map(o=>o.group),true);if(!hits.length){select(null);return}let n=hits[0].object;while(n&&!n.userData.rootId)n=n.parent;select(objects.find(o=>o.id===n?.userData.rootId)||null)}
+function bind3D(){document.querySelectorAll('[data-sr3-tool]').forEach(b=>b.addEventListener('click',()=>{tool=b.dataset.sr3Tool;document.querySelectorAll('[data-sr3-tool]').forEach(x=>x.classList.toggle('active',x===b));transformMode=tool==='rotate'?'rotation':tool==='scale'?'scale':'position';document.querySelectorAll('[data-sr3-mode]').forEach(x=>x.classList.toggle('active',x.dataset.sr3Mode===transformMode));syncSliders()}));document.querySelectorAll('[data-sr3-mode]').forEach(b=>b.addEventListener('click',()=>{transformMode=b.dataset.sr3Mode;document.querySelectorAll('[data-sr3-mode]').forEach(x=>x.classList.toggle('active',x===b));syncSliders()}));document.querySelectorAll('[data-sr3-snap]').forEach(b=>b.addEventListener('click',()=>{snap=Number(b.dataset.sr3Snap);document.querySelectorAll('[data-sr3-snap]').forEach(x=>x.classList.toggle('active',x===b))}));['X','Y','Z'].forEach((k,i)=>q('sr3'+k).addEventListener('input',e=>{if(!selected||selected.locked)return;let v=Number(e.target.value);if(transformMode==='position'){if(snap)v=Math.round(v/snap)*snap;selected.group.position[['x','y','z'][i]]=v}else if(transformMode==='rotation')selected.group.rotation[['x','y','z'][i]]=THREE.MathUtils.degToRad(v);else{selected.scale=v;selected.group.scale.setScalar(v)}syncUI()}));
+ q('sr3Duplicate').onclick=()=>{if(!selected)return;const old=selected,kind=old.kind;add(kind);selected.group.position.copy(old.group.position).add(new THREE.Vector3(.4,0,.4));selected.group.rotation.copy(old.group.rotation);selected.scale=old.scale;selected.group.scale.setScalar(old.scale);selected.model=old.model;selected.wll=old.wll;selected.mbs=old.mbs;syncUI()};q('sr3Delete').onclick=()=>{if(!selected)return;scene.remove(selected.group);objects.splice(objects.indexOf(selected),1);select(null)};q('sr3Hide').onclick=()=>{if(selected){selected.hidden=!selected.hidden;selected.group.visible=!selected.hidden}};q('sr3Lock').onclick=()=>{if(selected)selected.locked=!selected.locked};
+ document.querySelectorAll('[data-sr3-view]').forEach(b=>b.onclick=()=>{const d=10,t=orbit.target.clone(),p={top:[0,d,.001],front:[0,0,d],right:[d,0,0],iso:[d*.7,d*.6,d*.8]}[b.dataset.sr3View];camera.position.copy(t).add(new THREE.Vector3(...p));camera.lookAt(t);orbit.update()});
+ ['sr3Name','sr3Model','sr3Wll','sr3Mbs'].forEach(id=>q(id).addEventListener('input',e=>{if(!selected)return;const k={sr3Name:'name',sr3Model:'model',sr3Wll:'wll',sr3Mbs:'mbs'}[id];selected[k]=e.target.value}));['sr3PX','sr3PY','sr3PZ'].forEach((id,i)=>q(id).addEventListener('input',e=>{if(!selected||selected.locked)return;selected.group.position[['x','y','z'][i]]=Number(e.target.value)||0;syncSliders()}));
+ ['sr3Load','sr3Ratio','sr3Efficiency'].forEach(id=>q(id).addEventListener('input',calc3));q('sr3Scan').onclick=()=>q('sr3ScanDialog').showModal();q('sr3CloseScan').onclick=()=>q('sr3ScanDialog').close();q('sr3EnvironmentFile').onchange=e=>e.target.files[0]&&loadEnvironment(e.target.files[0]);q('sr3Opacity').oninput=envAppearance;q('sr3EnvMode').onchange=envAppearance;q('sr3EnvHide').onclick=()=>{if(environment){environmentHidden=!environmentHidden;environment.visible=!environmentHidden}};q('sr3EnvGround').onclick=groundEnvironment;
+}
+function calc3(){const l=Number(q('sr3Load').value)||0,r=Math.max(1,Number(q('sr3Ratio').value)||1),ef=Math.max(1,Number(q('sr3Efficiency').value)||100)/100;q('sr3Pull').textContent=(l/(r*ef)).toFixed(1)+' kg'}
+function loadEnvironment(file){const ext=file.name.split('.').pop().toLowerCase(),url=URL.createObjectURL(file),done=o=>{if(environment)scene.remove(environment);environment=o;scene.add(o);groundEnvironment();envAppearance();q('sr3EnvStatus').textContent='Loaded: '+file.name;URL.revokeObjectURL(url)},fail=()=>{q('sr3EnvStatus').textContent='Could not load model. GLB is recommended.';URL.revokeObjectURL(url)};if(ext==='glb'||ext==='gltf')new GLTFLoader().load(url,r=>done(r.scene),undefined,fail);else if(ext==='obj')new OBJLoader().load(url,done,undefined,fail);else if(ext==='stl')new STLLoader().load(url,g=>{g.computeVertexNormals();done(new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0x71808d,roughness:.9,side:THREE.DoubleSide})))},undefined,fail);else fail()}
+function groundEnvironment(){if(!environment)return;const b=new THREE.Box3().setFromObject(environment);environment.position.y-=b.min.y}
+function envAppearance(){if(!environment)return;const op=Number(q('sr3Opacity').value),mode=q('sr3EnvMode').value;environment.traverse(x=>{if(!x.isMesh)return;if(!x.userData.sr3Mat)x.userData.sr3Mat=x.material.clone();x.material=x.userData.sr3Mat.clone();x.material.transparent=op<1;x.material.opacity=op;x.material.wireframe=mode==='wireframe';if(mode==='shaded')x.material.map=null;x.material.needsUpdate=true})}
+</script>
+</body>
+</html>
