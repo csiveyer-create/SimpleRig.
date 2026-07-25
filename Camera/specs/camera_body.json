@@ -1,0 +1,60 @@
+{
+  "id": "camera_body",
+  "name": "Cinema Camera Body",
+  "category": "Camera",
+  "version": 1,
+  "units": "metres",
+  "files": {
+    "icon2d": "2d/camera_body.svg",
+    "model3d": "3d/camera_body.glb",
+    "thumbnail": "thumbnails/camera_body.svg"
+  },
+  "transform": {
+    "defaultScale": 1,
+    "upAxis": "Z",
+    "forwardAxis": "Y"
+  },
+  "connectionPoints": [
+    {
+      "id": "cableA",
+      "type": "wire",
+      "position": [
+        -0.55,
+        0.08,
+        0
+      ]
+    },
+    {
+      "id": "cableB",
+      "type": "wire",
+      "position": [
+        0.55,
+        0.08,
+        0
+      ]
+    },
+    {
+      "id": "camera",
+      "type": "camera-mount",
+      "position": [
+        0,
+        -0.4,
+        0
+      ]
+    }
+  ],
+  "snapPoints": [],
+  "specification": {
+    "manufacturer": "Generic original SimpleRig asset",
+    "model": "Cinema Camera Body",
+    "wll": null,
+    "mbs": null,
+    "weightKg": null,
+    "notes": "Illustrative planning model. Assign verified catalogue data before safety-critical use."
+  },
+  "dimensions": {
+    "x": 0.47,
+    "y": 0.37,
+    "z": 0.52
+  }
+}

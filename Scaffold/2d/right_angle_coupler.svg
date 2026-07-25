@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Right-Angle Coupler">
+<g><path d="M14 64h100" stroke="#555" stroke-width="12" stroke-linecap="round"/><circle cx="40" cy="64" r="16" fill="#222" stroke="#888" stroke-width="5"/><circle cx="88" cy="64" r="16" fill="#222" stroke="#888" stroke-width="5"/></g>
+<text x="64" y="121" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#111">Right-Angle Couple</text>
+</svg>

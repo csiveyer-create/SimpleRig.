@@ -1,0 +1,60 @@
+{
+  "id": "single_pulley",
+  "name": "Single Pulley",
+  "category": "Pulleys",
+  "version": 1,
+  "units": "metres",
+  "files": {
+    "icon2d": "2d/single_pulley.svg",
+    "model3d": "3d/single_pulley.glb",
+    "thumbnail": "thumbnails/single_pulley.svg"
+  },
+  "transform": {
+    "defaultScale": 1,
+    "upAxis": "Z",
+    "forwardAxis": "Y"
+  },
+  "connectionPoints": [
+    {
+      "id": "top",
+      "type": "connector",
+      "position": [
+        0,
+        0.5,
+        0
+      ]
+    },
+    {
+      "id": "sheave",
+      "type": "rope",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "bottom",
+      "type": "connector",
+      "position": [
+        0,
+        -0.5,
+        0
+      ]
+    }
+  ],
+  "snapPoints": [],
+  "specification": {
+    "manufacturer": "Generic original SimpleRig asset",
+    "model": "Single Pulley",
+    "wll": null,
+    "mbs": null,
+    "weightKg": null,
+    "notes": "Illustrative planning model. Assign verified catalogue data before safety-critical use."
+  },
+  "dimensions": {
+    "x": 0.32,
+    "y": 1.078,
+    "z": 0.58
+  }
+}

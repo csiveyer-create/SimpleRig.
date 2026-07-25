@@ -1,0 +1,60 @@
+{
+  "id": "wirecam",
+  "name": "Wirecam Trolley",
+  "category": "Camera",
+  "version": 1,
+  "units": "metres",
+  "files": {
+    "icon2d": "2d/wirecam.svg",
+    "model3d": "3d/wirecam.glb",
+    "thumbnail": "thumbnails/wirecam.svg"
+  },
+  "transform": {
+    "defaultScale": 1,
+    "upAxis": "Z",
+    "forwardAxis": "Y"
+  },
+  "connectionPoints": [
+    {
+      "id": "cableA",
+      "type": "wire",
+      "position": [
+        -0.55,
+        0.08,
+        0
+      ]
+    },
+    {
+      "id": "cableB",
+      "type": "wire",
+      "position": [
+        0.55,
+        0.08,
+        0
+      ]
+    },
+    {
+      "id": "camera",
+      "type": "camera-mount",
+      "position": [
+        0,
+        -0.4,
+        0
+      ]
+    }
+  ],
+  "snapPoints": [],
+  "specification": {
+    "manufacturer": "Generic original SimpleRig asset",
+    "model": "Wirecam Trolley",
+    "wll": null,
+    "mbs": null,
+    "weightKg": null,
+    "notes": "Illustrative planning model. Assign verified catalogue data before safety-critical use."
+  },
+  "dimensions": {
+    "x": 1.928,
+    "y": 0.981,
+    "z": 0.43
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "winch",
+  "name": "Stage Winch",
+  "category": "Machines",
+  "version": 1,
+  "units": "metres",
+  "files": {
+    "icon2d": "2d/winch.svg",
+    "model3d": "3d/winch.glb",
+    "thumbnail": "thumbnails/winch.svg"
+  },
+  "transform": {
+    "defaultScale": 1,
+    "upAxis": "Z",
+    "forwardAxis": "Y"
+  },
+  "connectionPoints": [
+    {
+      "id": "workingEnd",
+      "type": "machine-output",
+      "position": [
+        0.8,
+        0,
+        0.6
+      ]
+    }
+  ],
+  "snapPoints": [],
+  "specification": {
+    "manufacturer": "Generic original SimpleRig asset",
+    "model": "Stage Winch",
+    "wll": null,
+    "mbs": null,
+    "weightKg": null,
+    "notes": "Illustrative planning model. Assign verified catalogue data before safety-critical use."
+  },
+  "dimensions": {
+    "x": 2.02,
+    "y": 1.0,
+    "z": 1.08
+  }
+}

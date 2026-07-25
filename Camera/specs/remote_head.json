@@ -1,0 +1,60 @@
+{
+  "id": "remote_head",
+  "name": "Remote Camera Head",
+  "category": "Camera",
+  "version": 1,
+  "units": "metres",
+  "files": {
+    "icon2d": "2d/remote_head.svg",
+    "model3d": "3d/remote_head.glb",
+    "thumbnail": "thumbnails/remote_head.svg"
+  },
+  "transform": {
+    "defaultScale": 1,
+    "upAxis": "Z",
+    "forwardAxis": "Y"
+  },
+  "connectionPoints": [
+    {
+      "id": "cableA",
+      "type": "wire",
+      "position": [
+        -0.55,
+        0.08,
+        0
+      ]
+    },
+    {
+      "id": "cableB",
+      "type": "wire",
+      "position": [
+        0.55,
+        0.08,
+        0
+      ]
+    },
+    {
+      "id": "camera",
+      "type": "camera-mount",
+      "position": [
+        0,
+        -0.4,
+        0
+      ]
+    }
+  ],
+  "snapPoints": [],
+  "specification": {
+    "manufacturer": "Generic original SimpleRig asset",
+    "model": "Remote Camera Head",
+    "wll": null,
+    "mbs": null,
+    "weightKg": null,
+    "notes": "Illustrative planning model. Assign verified catalogue data before safety-critical use."
+  },
+  "dimensions": {
+    "x": 0.38,
+    "y": 0.36,
+    "z": 0.68
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "right_angle_coupler",
+  "name": "Right-Angle Coupler",
+  "category": "Scaffold",
+  "version": 1,
+  "units": "metres",
+  "files": {
+    "icon2d": "2d/right_angle_coupler.svg",
+    "model3d": "3d/right_angle_coupler.glb",
+    "thumbnail": "thumbnails/right_angle_coupler.svg"
+  },
+  "transform": {
+    "defaultScale": 1,
+    "upAxis": "Z",
+    "forwardAxis": "Y"
+  },
+  "connectionPoints": [],
+  "snapPoints": [
+    {
+      "id": "endA",
+      "type": "scaffold",
+      "position": [
+        -0.5,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "endB",
+      "type": "scaffold",
+      "position": [
+        0.5,
+        0,
+        0
+      ]
+    }
+  ],
+  "specification": {
+    "manufacturer": "Generic original SimpleRig asset",
+    "model": "Right-Angle Coupler",
+    "wll": null,
+    "mbs": null,
+    "weightKg": null,
+    "notes": "Illustrative planning model. Assign verified catalogue data before safety-critical use."
+  },
+  "dimensions": {
+    "x": 0.34,
+    "y": 0.16,
+    "z": 0.12
+  }
+}
