@@ -32,3 +32,10 @@ The full-body harness illustration has been redrawn from the user-supplied Climb
 - A free terminal endpoint compensates automatically; anchored endpoints are avoided where possible.
 - Objects attached to reacting endpoints move with those endpoints.
 - 3D pulley dragging now provides an approximate linked-load reaction until full 3D rope topology is introduced.
+
+## Corrective update
+- Restored the original higher-detail 32-icon equipment set exactly from the Detailed 3D Objects build.
+- Attach to end now always uses an existing terminal node and cannot extend the rope.
+- The normal Attach button automatically uses the existing terminal node when the object is near an endpoint.
+- Objects can snap directly to a terminal node when dropped close to it.
+- Reworked manual Live manipulation so moving an attached pulley or performer updates the rope point and solves a reactive terminal endpoint while preserving finite rope length.

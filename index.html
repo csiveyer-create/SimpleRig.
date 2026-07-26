@@ -1,0 +1,2228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>SimpleRig</title>
+<style>
+  :root{
+    --bg:#08111f;--bg2:#102136;--panel:rgba(16,29,46,.93);--card:#17283d;
+    --surface:#0e1b2b;--border:#304761;--text:#f4f7fb;--muted:#9fb0c4;
+    --accent:#35d0ba;--accentText:#061310;--accent-soft:rgba(53,208,186,.14);
+    --danger:#ff6b7a;--shadow:0 16px 42px rgba(0,0,0,.25)
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at 15% 0%,rgba(53,208,186,.12),transparent 30%),radial-gradient(circle at 95% 10%,rgba(124,140,255,.15),transparent 32%),linear-gradient(145deg,var(--bg),var(--bg2));color:var(--text);min-height:100vh}
+  #rigApp{padding:14px;max-width:1800px;margin:0 auto}.layout{display:grid;grid-template-columns:190px minmax(0,1fr) 250px;gap:12px;align-items:start}
+  .panel{border:1px solid rgba(159,176,196,.22);background:var(--panel);backdrop-filter:blur(16px);border-radius:18px;padding:12px;box-shadow:var(--shadow)}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;position:sticky;top:8px;z-index:60}
+  button,input,select,label.fileBtn{border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:11px;padding:9px 11px;font-size:14px;transition:border-color .16s,background .16s,transform .12s}
+  input::placeholder{color:#7f91a7}
+  button,label.fileBtn{cursor:pointer;font-weight:600}button:hover,label.fileBtn:hover{border-color:var(--accent);background:#1d324a}button:active,label.fileBtn:active{transform:translateY(1px)}
+  button.active,button.primary{background:linear-gradient(135deg,var(--accent),#76e4d4);color:var(--accentText);border-color:transparent;box-shadow:0 6px 20px rgba(53,208,186,.18)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .assetGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.asset{min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;position:relative;text-align:center;padding:7px;background:linear-gradient(145deg,#17283d,#122136)}
+  .asset svg,.asset img{width:58px;height:58px;object-fit:contain;pointer-events:none}
+  .asset.equipment-photo{min-height:104px;background:linear-gradient(145deg,#f6f7f8,#dfe5ea);color:#071019;overflow:hidden}
+  .asset.equipment-photo img{width:72px;height:72px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.18))}
+  #drawingLayer [data-object="true"] .icon-visual{color:#05080c}.canvasWrap{position:relative;border:1px solid #38516b;border-radius:18px;overflow:hidden;aspect-ratio:4/3;background:var(--card);box-shadow:0 20px 50px rgba(0,0,0,.28)}
+  #rigCanvas{width:100%;height:100%;display:block;touch-action:none;background:#f8fafc;background-image:linear-gradient(rgba(22,38,58,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(22,38,58,.07) 1px,transparent 1px);background-size:25px 25px}
+  .group{display:grid;gap:8px;margin-bottom:14px}.title{font-weight:750;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:#dce7f4;margin-bottom:8px}.small{font-size:12px;color:var(--muted);line-height:1.45}
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:7px}.metric{border:1px solid var(--border);border-radius:12px;padding:9px;background:linear-gradient(145deg,#17283d,#122136)}.metric b{display:block;font-size:17px}
+  .full{width:100%}.hiddenInput{display:none}.divider{height:1px;background:var(--border);margin:10px 0}
+  .toolbar-separator{width:1px;align-self:stretch;background:var(--border);margin:0 2px}
+  #zoomOutBtn,#zoomInBtn{min-width:40px;font-size:20px;line-height:1}
+  #zoomResetBtn{min-width:64px}
+  #rigCanvas.pan-mode{cursor:grab}
+  #rigCanvas.pan-mode:active{cursor:grabbing}
+  
+  .equipment-search-wrap{position:relative}
+  .equipment-search-wrap input,.custom-item-panel input,.custom-item-panel select{width:100%;box-sizing:border-box}
+  .equipment-suggestions{position:absolute;left:0;right:0;top:100%;z-index:50;display:none;max-height:240px;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:10px}
+  .equipment-suggestions.open{display:block}
+  .equipment-suggestion{display:block;width:100%;text-align:left;padding:10px;border:0;border-bottom:1px solid var(--border);background:transparent}
+  .equipment-suggestion:last-child{border-bottom:0}
+  .equipment-suggestion:hover{background:var(--accent-soft)}
+  .equipment-suggestion strong,.equipment-suggestion span{display:block}
+  .equipment-suggestion span{font-size:12px;opacity:.75;margin-top:2px}
+  .equipment-preview{margin-top:10px;padding:10px;border-radius:10px;background:var(--surface);font-size:13px}
+  .equipment-preview dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 10px;margin:0}
+  .equipment-preview dt{font-weight:700}
+  .equipment-preview dd{margin:0}
+  .button-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .inline-fields{display:grid;grid-template-columns:1fr 90px;gap:8px}
+  .custom-item-panel[hidden]{display:none}
+
+
+  .canvas-controls{position:absolute;z-index:40;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:6px;background:rgba(8,17,31,.82);border:1px solid rgba(159,176,196,.25);border-radius:14px;backdrop-filter:blur(12px);box-shadow:0 8px 24px rgba(0,0,0,.28)}
+  .canvas-controls button{min-width:42px;background:rgba(23,40,61,.92)}
+  .catalogue-count{font-size:12px;color:var(--muted);margin:6px 0 10px}
+  .applied-equipment{border:1px solid var(--border);background:rgba(8,17,31,.55);border-radius:12px;padding:10px;margin-bottom:10px;font-size:12px;line-height:1.45}
+  .verified-badge{color:#75e4d4}.warning-badge{color:#ffc977}
+  .production-details{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;padding:12px 14px}
+  .production-field{display:grid;gap:6px}
+  .production-field label{font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+  .production-field input{width:100%;font-size:15px;background:rgba(8,17,31,.72)}
+  .touch-target{fill:transparent;stroke:none;pointer-events:all}
+  .icon-visual{pointer-events:none}
+  .equipment-preview{background:rgba(8,17,31,.55)}
+  #deleteBtn{border-color:rgba(255,107,122,.55)}
+  #deleteBtn:hover{background:rgba(255,107,122,.12);border-color:var(--danger)}
+  .rig-handle{cursor:grab;touch-action:none}.rig-handle:active{cursor:grabbing}.rig-hit{cursor:pointer}
+  @media(max-width:900px){.layout{grid-template-columns:1fr}.assetGrid{grid-template-columns:repeat(4,minmax(0,1fr))}.production-details{grid-template-columns:1fr}.toolbar{position:relative;top:auto}}
+
+  .library-search{width:100%;margin-bottom:9px}
+  .asset-folder{border:1px solid var(--border);border-radius:12px;margin:0 0 8px;overflow:hidden;background:rgba(8,17,31,.35)}
+  .asset-folder>summary{cursor:pointer;padding:10px 12px;font-weight:750;list-style:none;display:flex;align-items:center;justify-content:space-between}
+  .asset-folder>summary::-webkit-details-marker{display:none}
+  .asset-folder>summary::after{content:"▾";color:var(--muted);transition:transform .15s}
+  .asset-folder:not([open])>summary::after{transform:rotate(-90deg)}
+  .asset-folder-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:0 8px 9px}
+  .asset.library-item{min-height:96px;padding:7px;background:linear-gradient(145deg,#f6f7f8,#dfe5ea);color:#071019}
+  .asset.library-item img{width:62px;height:62px;object-fit:contain}
+  .asset-folder-count{font-size:11px;color:var(--muted);font-weight:500;margin-left:auto;margin-right:8px}
+  .sr3-library-search{width:100%;margin-bottom:8px}
+  .sr3-folder{border:1px solid var(--sr3-border);border-radius:10px;margin-bottom:7px;overflow:hidden}
+  .sr3-folder summary{cursor:pointer;padding:9px 10px;font-weight:700;list-style:none;display:flex;justify-content:space-between}
+  .sr3-folder summary::-webkit-details-marker{display:none}
+  .sr3-folder summary::after{content:"▾";opacity:.65}
+  .sr3-folder:not([open]) summary::after{transform:rotate(-90deg)}
+  .sr3-folder-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:0 7px 8px}
+  .sr3-library-item{min-height:88px;padding:6px;display:grid;grid-template-rows:54px auto;place-items:center;font-size:11px;text-align:center}
+  .sr3-library-item img{width:52px;height:52px;object-fit:contain}
+  .loading-model{opacity:.6;pointer-events:none}
+
+
+  .name-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);padding:7px 9px;border:1px solid var(--border);border-radius:9px;background:rgba(255,255,255,.03)}
+  .name-toggle input{width:17px;height:17px;margin:0}
+  .object-name-label{font-family:Arial,sans-serif;font-size:22px;font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round;fill:#101827;pointer-events:none;text-anchor:middle}
+  .sr3-name-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:#aebdca;margin:0 0 9px;padding:8px;border:1px solid #26364b;border-radius:9px}
+  .sr3-name-toggle input{width:17px;height:17px;margin:0}
+  .sr3-folder-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .sr3-folder summary small{font-size:11px;color:#9eb0c0;font-weight:500;margin-left:auto;margin-right:8px}
+  .sr3-start-error{position:absolute;inset:16px;display:none;place-items:center;text-align:center;padding:24px;background:#101a27;border:1px solid #34485f;border-radius:12px;color:#eaf2fb;z-index:9}
+
+
+  .project-panel{position:fixed;inset:68px 18px 18px 18px;z-index:4000;display:none;background:rgba(5,12,20,.97);border:1px solid #34475d;border-radius:16px;color:#edf5fc;box-shadow:0 24px 70px rgba(0,0,0,.45);overflow:hidden}
+  .project-panel.open{display:grid;grid-template-rows:auto 1fr}
+  .project-header{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid #2a3a4d;background:#111c29}
+  .project-header h2{margin:0;font-size:16px}
+  .project-header .spacer{flex:1}
+  .project-body{display:grid;grid-template-columns:270px 1fr;min-height:0}
+  .project-sidebar{padding:12px;border-right:1px solid #2a3a4d;overflow:auto}
+  .project-main{padding:14px;overflow:auto;min-width:0}
+  .project-list{display:grid;gap:8px;margin-top:10px}
+  .project-card{padding:10px;border:1px solid #304258;border-radius:10px;background:#111c29;cursor:pointer}
+  .project-card.active{border-color:#68a9f6;background:#172a3e}
+  .project-card strong{display:block}
+  .project-card small{display:block;color:#9eb0c0;margin-top:3px}
+  .project-controls{display:grid;gap:8px}
+  .project-controls input,.project-controls select{width:100%}
+  .timeline-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .timeline{position:relative;min-height:270px;border:1px solid #304258;border-radius:12px;background:#0b1521;overflow:auto;padding:38px 18px 28px}
+  .timeline-line{position:absolute;left:42px;right:42px;top:138px;height:4px;background:#405268;border-radius:3px}
+  .timeline-slot{position:absolute;top:64px;width:150px;transform:translateX(-50%);cursor:grab;user-select:none}
+  .timeline-slot.dragging{opacity:.65;cursor:grabbing}
+  .timeline-card{border:1px solid #3b4f67;border-radius:10px;padding:9px;background:#142131;min-height:94px}
+  .timeline-card.active{border-color:#6bb0ff;box-shadow:0 0 0 2px rgba(107,176,255,.15)}
+  .timeline-card strong{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .timeline-card small{display:block;color:#9fb0c0;margin-top:5px}
+  .timeline-dot{width:14px;height:14px;border-radius:50%;background:#6aaef7;border:3px solid #0b1521;position:absolute;left:50%;top:68px;transform:translateX(-50%)}
+  .timeline-stem{position:absolute;left:50%;top:91px;height:27px;width:2px;background:#405268}
+  .timeline-empty{display:grid;place-items:center;min-height:230px;color:#9fb0c0;text-align:center}
+  .project-status{font-size:12px;color:#9fb0c0}
+  .project-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid #354a62;border-radius:999px;padding:6px 9px;font-size:12px;color:#b8c7d5}
+  @media(max-width:760px){.project-body{grid-template-columns:1fr}.project-sidebar{border-right:0;border-bottom:1px solid #2a3a4d;max-height:220px}.project-panel{inset:55px 5px 5px}.timeline-slot{width:125px}}
+
+
+  #workspaceHarness{display:none;margin:12px 14px 18px;grid-template-columns:245px minmax(0,1fr) 270px;gap:12px;align-items:start}
+  #workspaceHarness.active{display:grid}
+  .harness-stage{position:relative;min-height:690px;border:1px solid #314358;border-radius:12px;background:#e9edf0;overflow:hidden}
+  #harnessSvg{width:100%;height:690px;display:block;touch-action:none}
+  .harness-panel{background:#111c29;border:1px solid #2d4055;border-radius:12px;padding:12px;color:#edf5fc}
+  .harness-panel h3{margin:0 0 10px;font-size:14px}
+  .harness-options{display:grid;gap:8px}
+  .harness-options label{display:flex;align-items:center;gap:8px;font-size:13px}
+  .harness-toolbar{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}
+  .harness-note-input{width:100%;min-height:85px;resize:vertical}
+  .harness-item{cursor:grab}.harness-item.dragging{cursor:grabbing}
+  .layers-panel{margin-top:14px;border-top:1px solid #2b3e52;padding-top:12px}
+  .layers-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .layers-list{display:grid;gap:5px;max-height:270px;overflow:auto}
+  .layer-row{display:grid;grid-template-columns:28px 28px minmax(0,1fr) 28px 28px;gap:4px;align-items:center;padding:5px;border:1px solid #2d4055;border-radius:7px;background:#0c1723}
+  .layer-row.active{border-color:#69acf7;background:#14263a}
+  .layer-row button{padding:4px;min-width:0}
+  .layer-name{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+  .save-project-quick{background:#1769aa!important;color:white!important;border-color:#3181c4!important}
+  @media(max-width:900px){#workspaceHarness.active{grid-template-columns:1fr}.harness-stage{min-height:600px}#harnessSvg{height:600px}}
+
+
+  .operating-panel{margin-top:12px;padding-top:12px;border-top:1px solid #2b3e52}
+  .operating-panel h3{display:flex;align-items:center;justify-content:space-between;margin:0 0 9px}
+  .operating-toggle{display:flex;align-items:center;gap:8px;padding:8px;border:1px solid #3b4f66;border-radius:8px;background:#0d1926}
+  .operating-analysis{margin-top:9px;padding:10px;border:1px solid #354a61;border-radius:9px;background:#0a1521}
+  .operating-analysis.advantage{border-color:#388f65;background:#0c241d}
+  .operating-analysis.disadvantage{border-color:#b85252;background:#2b1316}
+  .operating-analysis.neutral{border-color:#967638;background:#29220f}
+  .operating-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+  .operating-metric{padding:7px;border:1px solid rgba(255,255,255,.12);border-radius:7px}
+  .operating-metric small{display:block;color:#a8b7c5}
+  .operating-metric strong{display:block;margin-top:2px;font-size:15px}
+  .operating-warning{font-size:11px;color:#c8d2dc;margin-top:8px;line-height:1.35}
+  .operating-layer-badge{font-size:9px;font-weight:700;color:#19120a;background:#f2a540;border-radius:999px;padding:2px 5px;margin-left:4px}
+
+
+  .live-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;margin:0 14px 10px;border:1px solid #34495f;border-radius:11px;background:#0d1824;color:#eaf1f7}
+  .live-bar.live{border-color:#d34d4d;background:#2a1115}
+  .live-indicator{display:inline-flex;align-items:center;gap:7px;font-weight:700}
+  .live-dot{width:10px;height:10px;border-radius:50%;background:#718191}
+  .live-bar.live .live-dot{background:#ff4a4a;box-shadow:0 0 0 5px rgba(255,74,74,.15)}
+  .live-bar input,.live-bar select{width:auto;min-width:92px}
+  .live-readout{margin-left:auto;font-size:12px;color:#bac8d4}
+  .live-bar.live .live-readout{color:#ffd8d8}
+  .live-warning{width:100%;font-size:11px;color:#aebcc8}
+  .live-bar.live .live-warning{color:#ffc3c3}
+  .object-live-controls{margin-top:10px;padding-top:10px;border-top:1px solid #d5dce3}
+  .object-live-controls label{display:block;margin-top:7px}
+  .sim-force-arrow{pointer-events:none}
+
+
+  .live-react-note{font-size:11px;color:#b9c7d3;margin-top:6px}
+
+</style>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#08111f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SimpleRig">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+
+
+<style id="sr3dStyles">
+  .workspace-mode-switch{display:flex;gap:0;margin:10px 14px 0;position:relative;z-index:20}
+  .workspace-mode-switch button{min-width:130px}
+  .workspace-mode-switch button:first-child{border-radius:10px 0 0 10px}
+  .workspace-mode-switch button:last-child{border-radius:0 10px 10px 0}
+  .workspace-mode-switch button.active{background:#1677e8;color:white;border-color:#1677e8}
+  #workspace3d{display:none;margin:12px 14px 18px;grid-template-columns:250px minmax(0,1fr) 270px;gap:12px;align-items:start}
+  #workspace3d.active{display:grid}
+  #workspace2d.hidden-workspace{display:none!important}
+  .sr3-panel{background:#0e1724;border:1px solid #26364b;border-radius:12px;padding:12px;color:#eaf2fb}
+  .sr3-panel h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+  .sr3-equipment-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+  .sr3-equipment-grid button{min-height:70px;padding:6px;font-size:11px;display:grid;place-items:center;gap:4px}
+  .sr3-equipment-grid .glyph{font-size:25px;line-height:1}
+  .sr3-stage-shell{min-width:0}
+  .sr3-stage{position:relative;height:650px;min-height:650px;background:#07101a;border:1px solid #26364b;border-radius:12px;overflow:hidden;contain:layout paint size}
+  #sr3Viewport{position:absolute;inset:0;width:100%;height:100%}
+  #sr3Viewport canvas{position:absolute;inset:0;display:block;width:100%!important;height:100%!important;touch-action:none}
+  .sr3-tools{position:absolute;left:12px;top:12px;z-index:5;display:grid;gap:6px;padding:7px;background:#0b1420e8;border:1px solid #2b3c51;border-radius:9px;transform:none!important;animation:none!important}
+  .sr3-tools button{width:66px;height:58px;padding:4px;display:grid;place-items:center;font-size:20px;animation:none!important;transition:background .12s,border-color .12s}
+  .sr3-tools small{font-size:10px}
+  .sr3-cube{position:absolute;right:12px;top:12px;z-index:5;width:124px;display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:6px;background:#0b1420e8;border:1px solid #2b3c51;border-radius:9px}
+  .sr3-cube button{font-size:10px;padding:8px 3px}
+  .sr3-dims{margin-top:10px;background:#0e1724;border:1px solid #26364b;border-radius:12px;padding:10px}
+  .sr3-tabs{display:flex;margin:-10px -10px 10px}
+  .sr3-tabs button{flex:1;border-radius:0;padding:10px}
+  .sr3-tabs button:first-child{border-radius:11px 0 0 0}.sr3-tabs button:last-child{border-radius:0 11px 0 0}
+  .sr3-tabs button.active,.sr3-tools button.active{background:#1677e8;color:#fff}
+  .sr3-sliders{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .sr3-sliders label{display:grid;grid-template-columns:1fr auto;gap:5px;font-size:12px;color:#aebdca}
+  .sr3-sliders input{grid-column:1/3;width:100%}
+  .sr3-snap{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:12px}
+  .sr3-snap button{padding:6px 9px}.sr3-snap button.active{background:#1677e8;color:#fff}
+  .sr3-field{display:grid;gap:5px;margin-bottom:9px;font-size:12px;color:#aebdca}
+  .sr3-field input,.sr3-field select,.sr3-field textarea{width:100%}
+  .sr3-three{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .sr3-status{font-size:12px;color:#9eb0c0;min-height:18px;margin-top:8px}
+  .sr3-result{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #2b3c51;border-radius:9px;margin-top:10px}
+  .sr3-result strong{font-size:22px;color:#2588ff}
+  @media(max-width:1050px){#workspace3d.active{grid-template-columns:210px minmax(0,1fr)}#sr3Inspector{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.sr3-stage{height:580px;min-height:580px}}
+  @media(max-width:760px){#workspace3d.active{display:block}.sr3-panel{margin-bottom:10px}.sr3-stage{height:520px;min-height:520px}.sr3-sliders{grid-template-columns:1fr}.sr3-equipment-grid{grid-template-columns:repeat(3,1fr)}#sr3Inspector{display:block}}
+</style>
+</head>
+<body>
+<div id="rigApp">
+<div class="workspace-mode-switch" role="tablist"><button id="switch2d" class="active" type="button">2D Plan</button><button id="switch3d" type="button">3D Visualisation</button>
+<button id="switchHarness" type="button">Harness Reference</button></div>
+<div id="liveBar" class="live-bar">
+  <span class="live-indicator"><span class="live-dot"></span><span id="liveStateText">Live mode off</span></span>
+  <button id="toggleLiveBtn" type="button">Go live</button>
+  <label>Applied force
+    <input id="liveForceKn" type="number" min="0" step="0.1" value="1">
+    kN
+  </label>
+  <label>Pulse duration
+    <input id="liveDuration" type="number" min="0.05" max="5" step="0.05" value="0.5">
+    s
+  </label>
+  <button id="applyLiveForceBtn" class="primary" type="button" disabled>Apply force</button>
+  <button id="resetLiveBtn" type="button" disabled>Reset simulation</button>
+  <span id="liveReadout" class="live-readout">Select and mark an operating point first.</span>
+  <div class="live-react-note">While Live is active, drag any attached pulley, performer or rope endpoint. The finite rope will react immediately.</div><div class="live-warning">Simulation preview only. It uses simplified quasi-static and point-mass assumptions, not a certified engineering solver. Do not use it to approve a stunt or rig.</div>
+</div>
+
+  <div class="panel toolbar">
+    <button id="selectTool" class="active" type="button">Select</button><button id="lineTool" type="button">Line</button><button id="arrowTool" type="button">Arrow</button><button id="textTool" type="button">Text</button>
+    <button id="addRigLineBtn" class="primary" type="button">Add rig line</button><button id="duplicateBtn" type="button">Duplicate</button><button id="deleteBtn" type="button">Delete</button><button id="undoBtn" type="button">Undo</button><button id="redoBtn" type="button">Redo</button>
+    <button id="downloadImageBtn" type="button">Download image</button>
+    <button id="downloadPdfBtn" class="primary" type="button">Download PDF</button>
+    <button id="saveCurrentToProjectBtn" class="save-project-quick" type="button">Save current workspace</button>
+    <button id="openProjectsBtn" type="button">Projects & Timeline</button>
+    <span id="activeProjectBadge" class="project-badge">No active project</span>
+    <label class="name-toggle"><input id="show2dNames" type="checkbox">Show object names</label>
+  </div>
+  <section class="panel production-details" aria-label="Production details">
+    <div class="production-field"><label for="showName">Show Name</label><input id="showName" type="text" placeholder="Production or show"></div>
+    <div class="production-field"><label for="gagName">Gag/Move Name</label><input id="gagName" type="text" placeholder="Gag, move or shot"></div>
+    <div class="production-field"><label for="locationName">Location</label><input id="locationName" type="text" placeholder="Stage, set or location"></div>
+  </section>
+  <div id="workspace2d" class="layout">
+    <aside class="panel">
+<div class="title">Equipment catalogue</div>
+<label for="equipmentSearch">Search manufacturer or model</label>
+<div class="equipment-search-wrap">
+  <input id="equipmentSearch" type="search" autocomplete="off" placeholder="e.g. Petzl SPIN L1">
+  <div id="equipmentSuggestions" class="equipment-suggestions" role="listbox" aria-label="Equipment suggestions"></div>
+</div>
+<div class="catalogue-count">31 original library assets · verified catalogue specifications remain separate</div><div id="equipmentPreview" class="equipment-preview">Search by manufacturer, model or equipment category.</div>
+<div class="button-row">
+  <button id="addCatalogueItemBtn" class="primary" type="button" disabled>Apply to selected object</button>
+  <button id="openCustomItemBtn" type="button">Create custom item</button>
+</div>
+
+<div id="customItemPanel" class="custom-item-panel" hidden>
+  <div class="divider"></div>
+  <div class="title">Create custom item</div>
+  <label for="customItemName">Item name</label>
+  <input id="customItemName" type="text" placeholder="Custom pulley">
+  <label for="customItemCategory">Category</label>
+  <select id="customItemCategory">
+    <option>Pulley</option>
+    <option>Double pulley</option>
+    <option>Shackle</option>
+    <option>Rope</option>
+    <option>Winch</option>
+    <option>Anchor</option>
+    <option>Truss</option>
+    <option>Rope grab</option>
+    <option>Other</option>
+  </select>
+  <label for="customItemWll">WLL / SWL</label>
+  <div class="inline-fields">
+    <input id="customItemWll" type="number" min="0" step="0.01" placeholder="0">
+    <select id="customItemUnit">
+      <option value="kN">kN</option>
+      <option value="kg">kg</option>
+      <option value="t">t</option>
+    </select>
+  </div>
+  <label for="customItemMbs">Breaking strength / MBS</label>
+  <input id="customItemMbs" type="number" min="0" step="0.01" placeholder="Optional">
+  <label for="customItemImage">Custom image</label>
+  <input id="customItemImage" type="file" accept="image/*">
+  <div class="button-row">
+    <button id="saveCustomItemBtn" type="button">Save custom item</button>
+    <button id="cancelCustomItemBtn" type="button">Cancel</button>
+  </div>
+</div>
+
+<div class="divider"></div>
+<div class="title">Equipment library</div>
+<input id="librarySearch2d" class="library-search" type="search" placeholder="Search icons and models">
+<div id="builtins"></div>
+<div class="divider"></div><div class="title">Custom icons</div>
+      <div class="group"><input id="customName" class="full" type="text" placeholder="Icon name"><label class="fileBtn full" for="customFile">Choose image</label><input id="customFile" class="hiddenInput" type="file" accept="image/png,image/jpeg,image/webp"><button id="addCustomBtn" type="button">Add to toolbar</button></div><div id="customAssets" class="assetGrid"></div>
+    </aside>
+    <section>
+      <div class="canvasWrap">
+        <div class="canvas-controls" aria-label="Diagram navigation">
+          <button id="zoomOutBtn" type="button" aria-label="Zoom out">−</button>
+          <button id="zoomResetBtn" type="button">100%</button>
+          <button id="zoomInBtn" type="button" aria-label="Zoom in">+</button>
+          <button id="panTool" type="button">Pan</button>
+        </div>
+        <svg id="rigCanvas" viewBox="0 0 1000 750" aria-label="SimpleRig drawing canvas"><g id="backgroundLayer"></g><g id="rigLineLayer"></g><g id="drawingLayer"></g><g id="selectionLayer"></g></svg>
+      </div>
+      <p id="status" class="small" aria-live="polite">Select an object, choose catalogue equipment, then apply it. Zoom and pan controls are positioned over the diagram.</p>
+    </section>
+    <aside class="panel">
+      <div class="title">Background</div><div class="group"><label class="fileBtn full" for="backgroundFile">Upload background</label><input id="backgroundFile" class="hiddenInput" type="file" accept="image/*"><label>Opacity<input id="backgroundOpacity" class="full" type="range" min="0.1" max="1" step="0.05" value="1"></label><button id="removeBackground" type="button">Remove background</button></div>
+      <div class="title">Rig line</div><div class="group"><label>Line colour<input id="rigLineColour" class="full" type="color" value="#111827"></label></div>
+      <div class="title">Selected object</div><div id="appliedEquipment" class="applied-equipment">No object selected.</div><div class="group"><label>Name<input id="objectName" class="full" type="text"></label><label>Role<select id="objectRole" class="full"><option value="unassigned">Unassigned</option><option value="fixed">Fixed pulley</option><option value="travelling">Travelling/load pulley</option><option value="redirect">Redirect pulley</option><option value="assist">Haul-assist pulley</option></select></label><label>Load weight (kg)<input id="objectWeight" class="full" type="number" min="0" step="0.1"></label><label>Rotation<input id="rotation" class="full" type="range" min="-180" max="180" value="0"></label><label>Scale<input id="scale" class="full" type="range" min="0.2" max="4" step="0.05" value="1"></label><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px"><button id="attachBtn" class="primary" type="button">Attach to rig line</button><button id="attachEndBtn" type="button">Attach to end</button></div><button id="detachBtn" type="button">Detach from rig line</button>
+    <div class="object-live-controls">
+      <label><input id="objectOperating" type="checkbox"> Mark as operating point</label>
+      <label>Supporting rope parts<input id="objectSupportingParts" class="full" type="number" min="0.1" step="0.1" value="1"></label>
+      <label>Force direction<select id="objectForceDirection" class="full"><option value="up">Up / lift</option><option value="down">Down / lower</option><option value="right">Right</option><option value="left">Left</option></select></label>
+    </div></div>
+      <div class="divider"></div><div class="title">Weight calculator</div><div class="group"><label>Load weight (kg)<input id="loadWeight" class="full" type="number" min="0" step="0.1" value="300"></label><label>Main system ratio<select id="mainRatio" class="full"><option value="1">1:1</option><option value="2">2:1</option><option value="3" selected>3:1</option><option value="4">4:1</option><option value="5">5:1</option><option value="6">6:1</option></select></label><label>Haul-assist ratio<select id="assistRatio" class="full"><option value="1">None / 1:1</option><option value="2" selected>2:1 assist</option><option value="3">3:1 assist</option><option value="4">4:1 assist</option></select></label><label>Overall efficiency (%)<input id="efficiency" class="full" type="number" min="10" max="100" value="85"></label></div>
+      <div class="metrics"><div class="metric"><span class="small">Main rope tension</span><b id="mainTension">100 kgf</b></div><div class="metric"><span class="small">Ideal operator pull</span><b id="idealPull">50 kgf</b></div><div class="metric"><span class="small">Estimated operator pull</span><b id="practicalPull">58.8 kgf</b></div><div class="metric"><span class="small">180° assist pulley</span><b id="assistPulleyLoad">117.6 kgf</b></div></div>
+    </aside>
+  </div>
+</div>
+
+<section id="workspace3d" aria-label="3D visualisation workspace">
+  <aside class="sr3-panel">
+    <h3>3D equipment</h3>
+    <input id="sr3LibrarySearch" class="sr3-library-search" type="search" placeholder="Search asset library">
+    <label class="sr3-name-toggle"><input id="show3dNames" type="checkbox">Show object names</label>
+    <div id="sr3Equipment"></div>
+    <hr>
+    <h3>Environment</h3>
+    <button id="sr3Scan" class="primary" type="button" style="width:100%">Scan environment (LiDAR)</button>
+    <label class="sr3-field">Import scan/model<input id="sr3EnvironmentFile" type="file" accept=".glb,.gltf,.obj,.stl"></label>
+    <label class="sr3-field">Opacity<input id="sr3Opacity" type="range" min="0.1" max="1" step="0.05" value="0.7"></label>
+    <label class="sr3-field">Display mode<select id="sr3EnvMode"><option value="textured">Textured</option><option value="shaded">Shaded</option><option value="wireframe">Wireframe</option></select></label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><button id="sr3EnvHide">Hide</button><button id="sr3EnvGround">Ground</button></div>
+    <div id="sr3EnvStatus" class="sr3-status">No environment loaded.</div>
+  </aside>
+  <section class="sr3-stage-shell">
+    <div class="sr3-stage" id="sr3Stage">
+      <div id="sr3Viewport"></div><div id="sr3StartError" class="sr3-start-error"><div><strong>3D workspace could not start.</strong><p>The standalone canvas renderer could not start. Reload the page and try again.</p></div></div>
+      <div class="sr3-tools" id="sr3Toolbar">
+        <button data-sr3-tool="select" class="active">↖<small>Select</small></button>
+        <button data-sr3-tool="move">✥<small>Move</small></button>
+        <button data-sr3-tool="rotate">⟳<small>Rotate</small></button>
+        <button data-sr3-tool="scale">⤢<small>Scale</small></button>
+        <button id="sr3Duplicate">▣<small>Duplicate</small></button>
+        <button id="sr3Delete">⌫<small>Delete</small></button>
+        <button id="sr3Hide">◉<small>Hide</small></button>
+        <button id="sr3Lock">▤<small>Lock</small></button>
+      </div>
+      <div class="sr3-cube">
+        <button data-sr3-view="top">TOP</button><button data-sr3-view="front">FRONT</button>
+        <button data-sr3-view="right">RIGHT</button><button data-sr3-view="iso">3D</button>
+      </div>
+    </div>
+    <div class="sr3-dims">
+      <div class="sr3-tabs"><button data-sr3-mode="position" class="active">Position</button><button data-sr3-mode="rotation">Rotation</button><button data-sr3-mode="scale">Scale</button></div>
+      <div class="sr3-sliders">
+        <label><span id="sr3LabelX">X position (m)</span><output id="sr3OutX">0.00</output><input id="sr3X" type="range"></label>
+        <label><span id="sr3LabelY">Y position (m)</span><output id="sr3OutY">0.00</output><input id="sr3Y" type="range"></label>
+        <label><span id="sr3LabelZ">Z position (m)</span><output id="sr3OutZ">0.00</output><input id="sr3Z" type="range"></label>
+      </div>
+      <div class="sr3-snap"><span>Snap</span><button data-sr3-snap="0">Off</button><button data-sr3-snap="0.01">0.01 m</button><button data-sr3-snap="0.05" class="active">0.05 m</button><button data-sr3-snap="0.1">0.10 m</button><button data-sr3-snap="0.25">0.25 m</button><button data-sr3-snap="0.5">0.50 m</button></div>
+    </div>
+  </section>
+  <aside id="sr3Inspector" class="sr3-panel">
+    
+<div>
+  <h3>Selected object</h3>
+  <label class="sr3-field">Name<input id="sr3Name"></label>
+  <div class="sr3-three">
+    <label class="sr3-field">X<input id="sr3PX" type="number" step="0.05"></label>
+    <label class="sr3-field">Y<input id="sr3PY" type="number" step="0.05"></label>
+    <label class="sr3-field">Z<input id="sr3PZ" type="number" step="0.05"></label>
+  </div>
+  <div class="operating-panel">
+    <h3>Operating-point analysis</h3>
+    <label class="operating-toggle"><input id="sr3Operating" type="checkbox">Mark this object as operating</label>
+    <label class="sr3-field">System role
+      <select id="sr3OperatingRole">
+        <option value="auto">Recognise automatically</option>
+        <option value="haul">Haul / pull line</option>
+        <option value="movingPulley">Moving pulley or travelling block</option>
+        <option value="fixedPulley">Fixed redirect pulley</option>
+        <option value="load">Load / performer</option>
+        <option value="winch">Winch or powered pull</option>
+        <option value="anchor">Anchor / tie-off</option>
+        <option value="other">Other operating point</option>
+      </select>
+    </label>
+    <label class="sr3-field">Supporting rope parts
+      <input id="sr3SupportingParts" type="number" min="0.1" step="0.1" value="1">
+    </label>
+    <label class="sr3-field">Pull direction
+      <select id="sr3PullDirection">
+        <option value="haul">Pull the free line</option>
+        <option value="moveObject">Move / pull the object itself</option>
+      </select>
+    </label>
+    <div id="sr3OperatingAnalysis" class="operating-analysis neutral">
+      <strong id="sr3OperatingClass">Select an object</strong>
+      <div class="operating-result-grid">
+        <div class="operating-metric"><small>Effective ratio</small><strong id="sr3EffectiveRatio">—</strong></div>
+        <div class="operating-metric"><small>Estimated input</small><strong id="sr3OperatingPull">—</strong></div>
+        <div class="operating-metric"><small>1 m input moves load</small><strong id="sr3LoadTravel">—</strong></div>
+        <div class="operating-metric"><small>Force effect</small><strong id="sr3ForceEffect">—</strong></div>
+      </div>
+      <div id="sr3OperatingMessage" class="operating-warning">Mark one object as operating to analyse what happens when force is applied there.</div>
+    </div>
+  </div>
+</div>
+
+    <div><h3>Catalogue equipment</h3><div id="sr3CatalogueNotice" class="sr3-status">Use the existing catalogue in 2D Plan, then switch back to 3D. Catalogue data remains in the project.</div><label class="sr3-field">Model<input id="sr3Model" placeholder="Generic"></label><label class="sr3-field">WLL<input id="sr3Wll" placeholder="—"></label><label class="sr3-field">MBS<input id="sr3Mbs" placeholder="—"></label></div>
+    <div><h3>Load calculation</h3><label class="sr3-field">Load (kg)<input id="sr3Load" type="number" value="100"></label><label class="sr3-field">System ratio<input id="sr3Ratio" type="number" min="1" value="3"></label><label class="sr3-field">Efficiency (%)<input id="sr3Efficiency" type="number" min="1" max="100" value="85"></label><div class="sr3-result">Estimated pull <strong id="sr3Pull">39.2 kg</strong></div></div>
+    <div class="layers-panel">
+      <div class="layers-header"><h3 style="margin:0">Layers</h3><button id="sr3AddGroup" type="button" title="Add group">＋</button></div>
+      <div id="sr3LayersList" class="layers-list"></div>
+    </div>
+
+  </aside>
+</section>
+
+<section id="workspaceHarness" aria-label="Harness reference workspace">
+  <aside class="harness-panel">
+    <h3>Performer</h3>
+    <div class="harness-options">
+      <label><input type="radio" name="harnessSex" value="male" checked>Male performer</label>
+      <label><input type="radio" name="harnessSex" value="female">Female performer</label>
+    </div>
+    <hr>
+    <h3>Harness configuration</h3>
+    <div class="harness-options">
+      <label><input id="hFullBody" type="checkbox" checked>Climbing Sutra full-body harness</label>
+      <label><input id="hLegCuffs" type="checkbox">Leg cuffs</label>
+      <label><input id="hAnkleCuffs" type="checkbox">Ankle cuffs</label>
+      <label><input id="hLastResort" type="checkbox">Last-resort belt</label>
+      <label><input id="hMartialArts" type="checkbox">Martial-arts harness</label>
+    </div>
+    <div class="harness-toolbar">
+      <button id="addHarnessShackle" type="button">Add shackle</button>
+      <button id="addHarnessNote" type="button">Add note</button>
+      <button id="deleteHarnessItem" type="button">Delete selected</button>
+      <button id="clearHarnessSheet" type="button">Clear sheet</button>
+    </div>
+  </aside>
+  <main class="harness-stage">
+    <svg id="harnessSvg" viewBox="0 0 700 850" xmlns="http://www.w3.org/2000/svg">
+      <rect width="700" height="850" fill="#eef1f3"/>
+      <g id="harnessFigure" transform="translate(350 38)">
+        <!-- Basic grey performer outline -->
+        <g id="maleFigure" fill="#b9c0c5" stroke="#59636b" stroke-width="4" stroke-linejoin="round">
+          <circle cx="0" cy="54" r="42"/>
+          <path d="M-58 105 Q0 82 58 105 Q76 170 77 257 Q73 334 56 397 L43 478 L35 748 H6 L-3 495 H3 L-6 748 H-35 L-43 478 L-56 397 Q-73 334-77 257 Q-76 170-58 105Z"/>
+          <path d="M-55 120 Q-103 157-143 269 L-165 363 L-136 371 L-99 285 L-45 198 M55 120 Q103 157 143 269 L165 363 L136 371 L99 285 L45 198" fill="none" stroke-linecap="round" stroke-width="28"/>
+        </g>
+        <g id="femaleFigure" fill="#b9c0c5" stroke="#59636b" stroke-width="4" stroke-linejoin="round" style="display:none">
+          <circle cx="0" cy="54" r="40"/>
+          <path d="M-49 105 Q0 87 49 105 Q67 169 64 253 Q86 323 59 407 L43 480 L34 748 H7 L-4 495 H4 L-7 748 H-34 L-43 480 L-59 407 Q-86 323-64 253 Q-67 169-49 105Z"/>
+          <path d="M-48 121 Q-94 160-134 270 L-156 361 L-128 369 L-93 285 L-39 202 M48 121 Q94 160 134 270 L156 361 L128 369 L93 285 L39 202" fill="none" stroke-linecap="round" stroke-width="26"/>
+        </g>
+
+        <!-- Climbing Sutra-style full-body harness based on the supplied reference -->
+        <g id="fullBodyHarness" stroke="#15191c" stroke-linecap="round" stroke-linejoin="round">
+          <!-- padded shoulder webs -->
+          <path d="M-51 111 Q-62 159-58 250 Q-57 319-48 374" fill="none" stroke-width="27"/>
+          <path d="M51 111 Q62 159 58 250 Q57 319 48 374" fill="none" stroke-width="27"/>
+          <path d="M-50 112 Q-56 158-53 247 Q-52 311-44 370 M50 112 Q56 158 53 247 Q52 311 44 370" fill="none" stroke="#3a4146" stroke-width="10" stroke-dasharray="18 13"/>
+
+          <!-- four horizontal torso belts -->
+          <g fill="none" stroke="#111518" stroke-width="18">
+            <path d="M-61 178 Q0 188 61 178"/>
+            <path d="M-64 231 Q0 241 64 231"/>
+            <path d="M-65 286 Q0 296 65 286"/>
+            <path d="M-62 343 Q0 353 62 343"/>
+          </g>
+          <!-- subtle belt highlights -->
+          <g fill="none" stroke="#363d42" stroke-width="5">
+            <path d="M-59 174 Q0 184 59 174"/>
+            <path d="M-62 227 Q0 237 62 227"/>
+            <path d="M-63 282 Q0 292 63 282"/>
+            <path d="M-60 339 Q0 349 60 339"/>
+          </g>
+
+          <!-- central aluminium buckles -->
+          <g fill="#d7dadd" stroke="#697178" stroke-width="4">
+            <rect x="-17" y="160" width="34" height="35" rx="5"/>
+            <rect x="-17" y="213" width="34" height="35" rx="5"/>
+            <rect x="-17" y="268" width="34" height="35" rx="5"/>
+            <rect x="-17" y="325" width="34" height="35" rx="5"/>
+          </g>
+          <g fill="#15191c">
+            <rect x="-9" y="164" width="7" height="27" rx="2"/><rect x="2" y="164" width="7" height="27" rx="2"/>
+            <rect x="-9" y="217" width="7" height="27" rx="2"/><rect x="2" y="217" width="7" height="27" rx="2"/>
+            <rect x="-9" y="272" width="7" height="27" rx="2"/><rect x="2" y="272" width="7" height="27" rx="2"/>
+            <rect x="-9" y="329" width="7" height="27" rx="2"/><rect x="2" y="329" width="7" height="27" rx="2"/>
+          </g>
+
+          <!-- lower side adjusters -->
+          <g fill="#cdd1d4" stroke="#60686f" stroke-width="3" transform="rotate(15 -54 387)">
+            <rect x="-67" y="374" width="26" height="25" rx="4"/>
+          </g>
+          <g fill="#cdd1d4" stroke="#60686f" stroke-width="3" transform="rotate(-15 54 387)">
+            <rect x="41" y="374" width="26" height="25" rx="4"/>
+          </g>
+
+          <!-- pelvic and leg webbing -->
+          <path d="M-52 384 Q-39 423-20 466 Q-14 490-8 514" fill="none" stroke-width="18"/>
+          <path d="M52 384 Q39 423 20 466 Q14 490 8 514" fill="none" stroke-width="18"/>
+          <path d="M-8 514 Q-34 505-43 474 Q-47 446-29 427" fill="none" stroke-width="16"/>
+          <path d="M8 514 Q34 505 43 474 Q47 446 29 427" fill="none" stroke-width="16"/>
+          <path d="M-45 444 Q-31 459-10 465 M45 444 Q31 459 10 465" fill="none" stroke="#3d4449" stroke-width="5"/>
+
+          <!-- small chest label -->
+          <rect x="25" y="164" width="34" height="18" rx="2" fill="#d8dde0" stroke="#5d656b" stroke-width="2"/>
+          <text x="42" y="176" text-anchor="middle" font-family="Arial" font-size="5.5" font-weight="700" fill="#202427" stroke="none">CLIMBING</text>
+          <text x="42" y="181" text-anchor="middle" font-family="Arial" font-size="5" font-weight="700" fill="#202427" stroke="none">SUTRA</text>
+        </g>
+
+        <g id="legCuffs" fill="none" stroke="#325f9b" stroke-width="15" style="display:none"><ellipse cx="-27" cy="530" rx="30" ry="18"/><ellipse cx="27" cy="530" rx="30" ry="18"/></g>
+        <g id="ankleCuffs" fill="none" stroke="#563b8f" stroke-width="14" style="display:none"><ellipse cx="-23" cy="714" rx="28" ry="15"/><ellipse cx="23" cy="714" rx="28" ry="15"/></g>
+        <g id="lastResortHarness" fill="none" stroke="#dd8d21" stroke-width="18" style="display:none"><path d="M-66 363 Q0 377 66 363"/><circle cx="0" cy="374" r="13" fill="#e8b449" stroke="#6a4d12" stroke-width="4"/></g>
+        <g id="martialArtsHarness" fill="none" stroke="#24856d" stroke-width="11" style="display:none"><path d="M-48 138L46 280M48 138L-46 280M-61 292H61"/><path d="M-42 290L0 365L42 290"/></g>
+      </g>
+      <g id="harnessItems"></g>
+      <text x="22" y="824" font-family="Arial" font-size="16" fill="#596672">Drag shackles and notes into position. Reference only — verify the actual harness and attachment method.</text>
+    </svg>
+  </main>
+  <aside class="harness-panel">
+    <h3>Sheet details</h3>
+    <label class="sr3-field">Reference title<input id="harnessTitle" value="Harness Reference"></label>
+    <label class="sr3-field">Performer name<input id="harnessPerformerName" placeholder="Performer"></label>
+    <label class="sr3-field">Costume / notes<textarea id="harnessGeneralNotes" class="harness-note-input" placeholder="Harness dressing, access, costume and attachment notes"></textarea></label>
+    <button id="saveHarnessToProject" class="primary" style="width:100%" type="button">Save sheet to project</button>
+  </aside>
+</section>
+
+<dialog id="sr3ScanDialog"><h2>LiDAR scanning</h2><p>Direct ARKit LiDAR capture requires the future native iPhone/iPad build. For this GitHub Pages version, scan with Polycam or Scaniverse and import GLB, OBJ or STL.</p><button id="sr3CloseScan" type="button">Close</button></dialog>
+
+<script>
+(() => {
+try {
+  const NS='http://www.w3.org/2000/svg',svg=document.getElementById('rigCanvas'),rigLayer=document.getElementById('rigLineLayer'),drawing=document.getElementById('drawingLayer'),selection=document.getElementById('selectionLayer'),background=document.getElementById('backgroundLayer'),status=document.getElementById('status');
+  let selected=null,selectedRig=null,drag=null,activeHandle=null;
+  let undoStack=[],redoStack=[],gestureBefore=null,controlBefore=null,restoringHistory=false;
+  const baseView={x:0,y:0,w:1000,h:750};
+  let view={...baseView},zoomLevel=1,panMode=false,panDrag=null;
+  const activePointers=new Map();
+  let pinchStart=null;
+  const SIMPLE_RIG_LIBRARY=[{"id":"pulleys","name":"Pulleys","assets":[{"id":"single_pulley","name":"Single Pulley","icon":"unique-icons/single_pulley.svg","model":"Pulleys/3d/single_pulley.glb","spec":"Pulleys/specs/single_pulley.json","thumbnail":"unique-icons/single_pulley.svg","triangles":10264},{"id":"double_pulley","name":"Double Pulley","icon":"unique-icons/double_pulley.svg","model":"Pulleys/3d/double_pulley.glb","spec":"Pulleys/specs/double_pulley.json","thumbnail":"unique-icons/double_pulley.svg","triangles":15128},{"id":"rescue_pulley","name":"Rescue Pulley","icon":"unique-icons/rescue_pulley.svg","model":"Pulleys/3d/rescue_pulley.glb","spec":"Pulleys/specs/rescue_pulley.json","thumbnail":"unique-icons/rescue_pulley.svg","triangles":10276},{"id":"progress_capture_pulley","name":"Progress Capture Pulley","icon":"unique-icons/progress_capture_pulley.svg","model":"Pulleys/3d/progress_capture_pulley.glb","spec":"Pulleys/specs/progress_capture_pulley.json","thumbnail":"unique-icons/progress_capture_pulley.svg","triangles":10532}]},{"id":"hardware","name":"Hardware","assets":[{"id":"rope_grab","name":"Rope Grab","icon":"unique-icons/rope_grab.svg","model":"Hardware/3d/rope_grab.glb","spec":"Hardware/specs/rope_grab.json","thumbnail":"unique-icons/rope_grab.svg","triangles":7564},{"id":"clutch","name":"Clutch","icon":"unique-icons/clutch.svg","model":"Hardware/3d/clutch.glb","spec":"Hardware/specs/clutch.json","thumbnail":"unique-icons/clutch.svg","triangles":5144},{"id":"bollard","name":"Bollard","icon":"unique-icons/bollard.svg","model":"Hardware/3d/bollard.glb","spec":"Hardware/specs/bollard.json","thumbnail":"unique-icons/bollard.svg","triangles":1024},{"id":"descender","name":"Descender","icon":"unique-icons/descender.svg","model":"Hardware/3d/descender.glb","spec":"Hardware/specs/descender.json","thumbnail":"unique-icons/descender.svg","triangles":5888},{"id":"carabiner","name":"Carabiner","icon":"unique-icons/carabiner.svg","model":"Hardware/3d/carabiner.glb","spec":"Hardware/specs/carabiner.json","thumbnail":"unique-icons/carabiner.svg","triangles":5772},{"id":"shackle","name":"Bow Shackle","icon":"unique-icons/shackle.svg","model":"Hardware/3d/shackle.glb","spec":"Hardware/specs/shackle.json","thumbnail":"unique-icons/shackle.svg","triangles":6016},{"id":"rigging_plate","name":"Rigging Plate","icon":"unique-icons/rigging_plate.svg","model":"Hardware/3d/rigging_plate.glb","spec":"Hardware/specs/rigging_plate.json","thumbnail":"unique-icons/rigging_plate.svg","triangles":1152},{"id":"swivel","name":"Swivel","icon":"unique-icons/swivel.svg","model":"Hardware/3d/swivel.glb","spec":"Hardware/specs/swivel.json","thumbnail":"unique-icons/swivel.svg","triangles":9472}]},{"id":"truss","name":"Truss","assets":[{"id":"truss_1m","name":"Box Truss 1 m","icon":"unique-icons/truss_1m.svg","model":"Truss/3d/truss_1m.glb","spec":"Truss/specs/truss_1m.json","thumbnail":"unique-icons/truss_1m.svg","triangles":896},{"id":"truss_2m","name":"Box Truss 2 m","icon":"unique-icons/truss_2m.svg","model":"Truss/3d/truss_2m.glb","spec":"Truss/specs/truss_2m.json","thumbnail":"unique-icons/truss_2m.svg","triangles":1472},{"id":"truss_3m","name":"Box Truss 3 m","icon":"unique-icons/truss_3m.svg","model":"Truss/3d/truss_3m.glb","spec":"Truss/specs/truss_3m.json","thumbnail":"unique-icons/truss_3m.svg","triangles":2048},{"id":"truss_corner","name":"Box Truss 90\u00b0 Corner","icon":"unique-icons/truss_corner.svg","model":"Truss/3d/truss_corner.glb","spec":"Truss/specs/truss_corner.json","thumbnail":"unique-icons/truss_corner.svg","triangles":1792},{"id":"truss_baseplate","name":"Truss Base Plate","icon":"unique-icons/truss_baseplate.svg","model":"Truss/3d/truss_baseplate.glb","spec":"Truss/specs/truss_baseplate.json","thumbnail":"unique-icons/truss_baseplate.svg","triangles":1036}]},{"id":"scaffold","name":"Scaffold","assets":[{"id":"scaffold_tube_1m","name":"Scaffold Tube 1 m","icon":"unique-icons/scaffold_tube_1m.svg","model":"Scaffold/3d/scaffold_tube_1m.glb","spec":"Scaffold/specs/scaffold_tube_1m.json","thumbnail":"unique-icons/scaffold_tube_1m.svg","triangles":192},{"id":"scaffold_tube_2m","name":"Scaffold Tube 2 m","icon":"unique-icons/scaffold_tube_2m.svg","model":"Scaffold/3d/scaffold_tube_2m.glb","spec":"Scaffold/specs/scaffold_tube_2m.json","thumbnail":"unique-icons/scaffold_tube_2m.svg","triangles":192},{"id":"scaffold_tube_3m","name":"Scaffold Tube 3 m","icon":"unique-icons/scaffold_tube_3m.svg","model":"Scaffold/3d/scaffold_tube_3m.glb","spec":"Scaffold/specs/scaffold_tube_3m.json","thumbnail":"unique-icons/scaffold_tube_3m.svg","triangles":192},{"id":"right_angle_coupler","name":"Right-Angle Coupler","icon":"unique-icons/right_angle_coupler.svg","model":"Scaffold/3d/right_angle_coupler.glb","spec":"Scaffold/specs/right_angle_coupler.json","thumbnail":"unique-icons/right_angle_coupler.svg","triangles":524},{"id":"swivel_coupler","name":"Swivel Coupler","icon":"unique-icons/swivel_coupler.svg","model":"Scaffold/3d/swivel_coupler.glb","spec":"Scaffold/specs/swivel_coupler.json","thumbnail":"unique-icons/swivel_coupler.svg","triangles":524},{"id":"base_jack","name":"Adjustable Base Jack","icon":"unique-icons/base_jack.svg","model":"Scaffold/3d/base_jack.glb","spec":"Scaffold/specs/base_jack.json","thumbnail":"unique-icons/base_jack.svg","triangles":780}]},{"id":"camera","name":"Camera","assets":[{"id":"wirecam","name":"Wirecam Trolley","icon":"unique-icons/wirecam.svg","model":"Camera/3d/wirecam.glb","spec":"Camera/specs/wirecam.json","thumbnail":"unique-icons/wirecam.svg","triangles":1572},{"id":"camera_body","name":"Cinema Camera Body","icon":"unique-icons/camera_body.svg","model":"Camera/3d/camera_body.glb","spec":"Camera/specs/camera_body.json","thumbnail":"unique-icons/camera_body.svg","triangles":280},{"id":"remote_head","name":"Remote Camera Head","icon":"unique-icons/remote_head.svg","model":"Camera/3d/remote_head.glb","spec":"Camera/specs/remote_head.json","thumbnail":"unique-icons/remote_head.svg","triangles":524}]},{"id":"machines","name":"Machines","assets":[{"id":"winch","name":"Stage Winch","icon":"unique-icons/winch.svg","model":"Machines/3d/winch.glb","spec":"Machines/specs/winch.json","thumbnail":"unique-icons/winch.svg","triangles":24112},{"id":"telehandler","name":"Telehandler","icon":"unique-icons/telehandler.svg","model":"Machines/3d/telehandler.glb","spec":"Machines/specs/telehandler.json","thumbnail":"unique-icons/telehandler.svg","triangles":1084},{"id":"telehandler_boom_out","name":"Telehandler \u2014 Boom Extended","icon":"unique-icons/telehandler_boom_out.svg","model":"Machines/3d/telehandler_boom_out.glb","spec":"Machines/specs/telehandler_boom_out.json","thumbnail":"unique-icons/telehandler_boom_out.svg","triangles":1096},{"id":"scissor_lift","name":"Scissor Lift","icon":"unique-icons/scissor_lift.svg","model":"Machines/3d/scissor_lift.glb","spec":"Machines/specs/scissor_lift.json","thumbnail":"unique-icons/scissor_lift.svg","triangles":2072},{"id":"scissor_lift_raised","name":"Scissor Lift \u2014 Raised","icon":"unique-icons/scissor_lift_raised.svg","model":"Machines/3d/scissor_lift_raised.glb","spec":"Machines/specs/scissor_lift_raised.json","thumbnail":"unique-icons/scissor_lift_raised.svg","triangles":2584}]},{"id":"people","name":"People","assets":[{"id":"performer","name":"Performer","icon":"unique-icons/performer.svg","model":"","spec":"","thumbnail":"unique-icons/performer.svg","triangles":0}]}];
+  const icons={};
+  SIMPLE_RIG_LIBRARY.forEach(category=>category.assets.forEach(asset=>{
+    icons[asset.name]={
+      photo:asset.icon,
+      plan:asset.icon,
+      model:asset.model,
+      spec:asset.spec,
+      category:category.name,
+      id:asset.id
+    };
+  }));
+  function applyView(){
+    svg.setAttribute('viewBox',`${view.x} ${view.y} ${view.w} ${view.h}`);
+    document.getElementById('zoomResetBtn').textContent=Math.round(zoomLevel*100)+'%';
+  }
+  function clampView(){
+    const maxW=baseView.w*2,maxH=baseView.h*2;
+    view.w=Math.min(maxW,Math.max(baseView.w/6,view.w));
+    view.h=Math.min(maxH,Math.max(baseView.h/6,view.h));
+    zoomLevel=baseView.w/view.w;
+    const minX=baseView.x-(view.w-baseView.w)/2-(view.w*.15),maxX=baseView.x+baseView.w-view.w+(view.w-baseView.w)/2+(view.w*.15);
+    const minY=baseView.y-(view.h-baseView.h)/2-(view.h*.15),maxY=baseView.y+baseView.h-view.h+(view.h-baseView.h)/2+(view.h*.15);
+    view.x=Math.min(maxX,Math.max(minX,view.x));
+    view.y=Math.min(maxY,Math.max(minY,view.y));
+  }
+  function zoomAt(factor,cx=baseView.w/2,cy=baseView.h/2){
+    const oldW=view.w,oldH=view.h;
+    const nextW=oldW/factor,nextH=oldH/factor;
+    const rx=(cx-view.x)/oldW,ry=(cy-view.y)/oldH;
+    view.w=nextW;view.h=nextH;
+    view.x=cx-rx*nextW;view.y=cy-ry*nextH;
+    clampView();applyView();
+    status.textContent=`Zoom ${Math.round(zoomLevel*100)}%. Use Pan or two fingers to move around.`;
+  }
+  function resetZoom(){
+    view={...baseView};zoomLevel=1;applyView();
+    status.textContent='Zoom reset to 100%.';
+  }
+  function screenToSvg(clientX,clientY){
+    const p=svg.createSVGPoint();p.x=clientX;p.y=clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  function pt(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
+  function uid(){return Math.random().toString(36).slice(2,9)}
+  function ensureObjectHistoryId(el){if(el&&!el.dataset.historyId)el.dataset.historyId='obj-'+uid();return el?.dataset.historyId||null}
+  function snapshot(){
+    drawing.querySelectorAll('[data-object="true"]').forEach(ensureObjectHistoryId);
+    return JSON.stringify({background:background.innerHTML,rig:rigLayer.innerHTML,drawing:drawing.innerHTML,selectedObject:selected?ensureObjectHistoryId(selected):null,selectedRig:selectedRig?selectedRig.dataset.id:null})
+  }
+  function updateHistoryButtons(){document.getElementById('undoBtn').disabled=!undoStack.length;document.getElementById('redoBtn').disabled=!redoStack.length}
+  function commitHistory(before){if(restoringHistory||!before)return;const after=snapshot();if(after!==before){undoStack.push(before);if(undoStack.length>80)undoStack.shift();redoStack=[];updateHistoryButtons()}}
+  function recordAction(fn){const before=snapshot();fn();commitHistory(before)}
+  function rebindAll(){
+    drawing.querySelectorAll('[data-object="true"]').forEach(bindIcon);
+    rigLayer.querySelectorAll('[data-rig="true"]').forEach(g=>{
+      g.querySelectorAll('polyline').forEach(line=>line.addEventListener('pointerdown',e=>{e.stopPropagation();selectRig(g)}));
+      g.querySelectorAll('.rig-handle').forEach(h=>h.addEventListener('pointerdown',e=>{e.stopPropagation();selectRig(g);activeHandle=h;gestureBefore=snapshot();try{svg.setPointerCapture(e.pointerId)}catch(_){}}));
+    });
+  }
+  function restoreSnapshot(state){
+    restoringHistory=true;
+    try{
+      const data=JSON.parse(state);
+      background.innerHTML=data.background||'';rigLayer.innerHTML=data.rig||'';drawing.innerHTML=data.drawing||'';
+      selection.innerHTML='';selected=null;selectedRig=null;rebindAll();update2DObjectNames();
+      if(data.selectedObject){const restored=[...drawing.querySelectorAll('[data-object="true"]')].find(el=>el.dataset.historyId===data.selectedObject);if(restored)select(restored)}
+      if(!selected&&data.selectedRig){const rig=rigLayer.querySelector(`[data-id="${data.selectedRig}"]`);if(rig)selectRig(rig)}
+    }finally{restoringHistory=false;updateHistoryButtons()}
+  }
+  function undo(){if(!undoStack.length){status.textContent='Nothing to undo.';return}const current=snapshot();const previous=undoStack.pop();redoStack.push(current);restoreSnapshot(previous);updateHistoryButtons();status.textContent='Undone.'}
+  function redo(){if(!redoStack.length){status.textContent='Nothing to redo.';return}const current=snapshot();const next=redoStack.pop();undoStack.push(current);restoreSnapshot(next);updateHistoryButtons();status.textContent='Redone.'}
+  function duplicateSelected(){if(!selected){status.textContent='Select an icon to duplicate.';return}const clone=selected.cloneNode(true);clone.dataset.x=String((+selected.dataset.x||0)+35);clone.dataset.y=String((+selected.dataset.y||0)+35);delete clone.dataset.rigId;delete clone.dataset.controlIndex;delete clone.dataset.attachMode;drawing.appendChild(clone);bindIcon(clone);applyTransform(clone);select(clone);status.textContent='Object duplicated.'}
+  function deleteSelection(){
+    if(selected){
+      const target=selected,rigId=target.dataset.rigId,index=Number(target.dataset.controlIndex);
+      if(rigId){
+        const rig=rigLayer.querySelector(`[data-id="${rigId}"]`);
+        if(rig){
+          const points=JSON.parse(rig.dataset.points||'[]');
+          if(index>0&&index<points.length-1)points.splice(index,1);
+          rig.dataset.points=JSON.stringify(points);
+          drawing.querySelectorAll(`[data-rig-id="${rigId}"]`).forEach(other=>{if(other!==target&&Number(other.dataset.controlIndex)>index)other.dataset.controlIndex=String(Number(other.dataset.controlIndex)-1)});
+          renderRig(rig);
+        }
+      }
+      target.remove();selected=null;selection.innerHTML='';status.textContent='Object deleted.';return;
+    }
+    if(selectedRig){
+      const id=selectedRig.dataset.id;
+      drawing.querySelectorAll(`[data-rig-id="${id}"]`).forEach(el=>{delete el.dataset.rigId;delete el.dataset.controlIndex;delete el.dataset.attachMode});
+      selectedRig.remove();selectedRig=null;selection.innerHTML='';status.textContent='Rig line deleted.';return;
+    }
+    status.textContent='Select an object or rig line to delete.';
+  }
+  function addRigLine(){const n=rigLayer.querySelectorAll('[data-rig="true"]').length,y=300+n*55,g=document.createElementNS(NS,'g');g.dataset.rig='true';g.dataset.id=uid();g.dataset.colour='#111827';g.dataset.points=JSON.stringify([{x:180,y},{x:820,y}]);const hit=document.createElementNS(NS,'polyline');hit.setAttribute('fill','none');hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width','28');hit.classList.add('rig-hit');hit.addEventListener('pointerdown',e=>{e.stopPropagation();selectRig(g)});const path=document.createElementNS(NS,'polyline');path.setAttribute('fill','none');path.setAttribute('stroke','#111827');path.setAttribute('stroke-width','6');path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');path.dataset.visible='true';path.addEventListener('pointerdown',e=>{e.stopPropagation();selectRig(g)});g.append(hit,path);g.append(makeHandle(g.dataset.id,0,180,y),makeHandle(g.dataset.id,1,820,y));rigLayer.appendChild(g);renderRig(g);selectRig(g)}
+  function makeHandle(rid,index,x,y){const c=document.createElementNS(NS,'circle');c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('r','15');c.setAttribute('fill','#2563eb');c.setAttribute('stroke','#fff');c.setAttribute('stroke-width','4');c.classList.add('rig-handle');c.dataset.rigId=rid;c.dataset.pointIndex=index;c.addEventListener('pointerdown',e=>{e.stopPropagation();const rig=rigLayer.querySelector(`[data-id="${rid}"]`);selectRig(rig);activeHandle=c;gestureBefore=snapshot();try{svg.setPointerCapture(e.pointerId)}catch(_){}});return c}
+  function selectRig(g){selectedRig=g;document.getElementById('rigLineColour').value=g.dataset.colour||'#111827';rigLayer.querySelectorAll('[data-rig="true"]').forEach(r=>r.querySelectorAll('.rig-handle').forEach(h=>h.setAttribute('fill',r===g?'#2563eb':'#6b7280')));status.textContent='Rig line selected. Drag either end node or change its colour.'}
+  function renderRig(g){
+    const points=JSON.parse(g.dataset.points),pointString=points.map(p=>`${p.x},${p.y}`).join(' ');
+    g.querySelectorAll('polyline').forEach(p=>p.setAttribute('points',pointString));g.querySelector('[data-visible="true"]').setAttribute('stroke',g.dataset.colour||'#111827');
+    g.querySelectorAll('.rig-handle').forEach(h=>h.remove());
+    if(points.length){g.append(makeHandle(g.dataset.id,0,points[0].x,points[0].y));if(points.length>1)g.append(makeHandle(g.dataset.id,points.length-1,points.at(-1).x,points.at(-1).y))}
+    drawing.querySelectorAll(`[data-rig-id="${g.dataset.id}"]`).forEach(el=>{const p=points[+el.dataset.controlIndex];if(p){el.dataset.x=p.x;el.dataset.y=p.y;applyTransform(el)}})
+  }
+
+  function rigLength(points){
+    let total=0;
+    for(let i=0;i<points.length-1;i++)total+=Math.hypot(points[i+1].x-points[i].x,points[i+1].y-points[i].y);
+    return total
+  }
+  function ensureFiniteLength(rig){
+    const points=JSON.parse(rig.dataset.points||'[]');
+    const current=rigLength(points);
+    if(!Number.isFinite(Number(rig.dataset.liveLength))||Number(rig.dataset.liveLength)<=0)rig.dataset.liveLength=String(current);
+    return Number(rig.dataset.liveLength)
+  }
+  function clearFiniteLengths(){
+    rigLayer.querySelectorAll('[data-rig="true"]').forEach(rig=>delete rig.dataset.liveLength)
+  }
+  function setAllFiniteLengths(){
+    rigLayer.querySelectorAll('[data-rig="true"]').forEach(rig=>{
+      const points=JSON.parse(rig.dataset.points||'[]');
+      rig.dataset.liveLength=String(rigLength(points))
+    })
+  }
+  function endpointIsFixed(rig,index){
+    const attached=[...drawing.querySelectorAll(`[data-rig-id="${rig.dataset.id}"]`)]
+      .filter(obj=>Number(obj.dataset.controlIndex)===index);
+    return attached.some(obj=>{
+      const role=(obj.dataset.role||'').toLowerCase();
+      const name=(obj.dataset.name||'').toLowerCase();
+      return role==='fixed'||name.includes('tie-off')||name.includes('anchor')||
+        name.includes('truss')||name.includes('bollard')||name.includes('rope grab')
+    })
+  }
+
+  function endpointCandidates(rig,movedIndex,last){
+    if(movedIndex===0)return [last];
+    if(movedIndex===last)return [0];
+    return [0,last]
+  }
+
+  function chooseReactiveEndpoint(rig,movedIndex,last){
+    const candidates=endpointCandidates(rig,movedIndex,last);
+    const free=candidates.find(index=>!endpointIsFixed(rig,index));
+    return free!==undefined?free:candidates[0]
+  }
+
+  function lengthWithoutTerminalSegment(points,terminalIndex){
+    const last=points.length-1;
+    let sum=0;
+    for(let i=0;i<last;i++){
+      if(terminalIndex===0&&i===0)continue;
+      if(terminalIndex===last&&i===last-1)continue;
+      sum+=Math.hypot(points[i+1].x-points[i].x,points[i+1].y-points[i].y)
+    }
+    return sum
+  }
+
+  function solveReactiveEndpoint(rig,movedIndex,targetLength){
+    const points=JSON.parse(rig.dataset.points||'[]');
+    if(points.length<2)return points;
+
+    const last=points.length-1;
+    const reactiveIndex=chooseReactiveEndpoint(rig,movedIndex,last);
+    if(reactiveIndex===movedIndex)return points;
+
+    const neighbourIndex=reactiveIndex===0?1:last-1;
+    const neighbour=points[neighbourIndex];
+    const previous=points[reactiveIndex];
+
+    const fixedLength=lengthWithoutTerminalSegment(points,reactiveIndex);
+    const required=Math.max(0,targetLength-fixedLength);
+
+    let dx=previous.x-neighbour.x;
+    let dy=previous.y-neighbour.y;
+    let magnitude=Math.hypot(dx,dy);
+
+    if(magnitude<0.001){
+      // Use the previous terminal direction, or a stable fallback direction.
+      const fallback=reactiveIndex===0?points[Math.min(2,last)]:points[Math.max(0,last-2)];
+      dx=neighbour.x-fallback.x;
+      dy=neighbour.y-fallback.y;
+      magnitude=Math.hypot(dx,dy)||1
+    }
+
+    dx/=magnitude;
+    dy/=magnitude;
+    points[reactiveIndex]={
+      x:neighbour.x+dx*required,
+      y:neighbour.y+dy*required
+    };
+
+    rig.dataset.points=JSON.stringify(points);
+    return points
+  }
+
+  function constrainFiniteRig(rig,movedIndex){
+    const target=ensureFiniteLength(rig);
+    solveReactiveEndpoint(rig,movedIndex,target);
+    renderRig(rig);
+    updateAttachedEndObjects(rig);
+
+    const solved=JSON.parse(rig.dataset.points||'[]');
+    const residual=Math.abs(rigLength(solved)-target);
+    rig.dataset.liveResidual=String(residual);
+    status.textContent=residual<0.5
+      ?'LIVE: rig reacted and finite rope length was preserved.'
+      :'LIVE: rig reached a constrained state; check fixed endpoints.'
+  }
+
+  function nearestSegment(x,y){let best=null;rigLayer.querySelectorAll('[data-rig="true"]').forEach(rig=>{const points=JSON.parse(rig.dataset.points);for(let i=0;i<points.length-1;i++){const a=points[i],b=points[i+1],dx=b.x-a.x,dy=b.y-a.y,l2=dx*dx+dy*dy||1;let t=((x-a.x)*dx+(y-a.y)*dy)/l2;t=Math.max(0,Math.min(1,t));const px=a.x+t*dx,py=a.y+t*dy,d=Math.hypot(x-px,y-py);if(!best||d<best.d)best={rig,segmentIndex:i,p:{x:px,y:py},d}}});return best}
+  function nearestEndpoint(x,y){let best=null;rigLayer.querySelectorAll('[data-rig="true"]').forEach(rig=>{const points=JSON.parse(rig.dataset.points);[0,points.length-1].forEach(index=>{const p=points[index],d=Math.hypot(x-p.x,y-p.y);if(!best||d<best.d)best={rig,index,p,d}})});return best}
+  function attachEndSelected(){
+    if(!selected){status.textContent='Select an icon first.';return}
+    if(selected.dataset.rigId)detachSelected();
+    const near=nearestEndpoint(+selected.dataset.x,+selected.dataset.y);
+    if(!near){status.textContent='Add a rig line first.';return}
+
+    selected.dataset.rigId=near.rig.dataset.id;
+    selected.dataset.controlIndex=near.index;
+    selected.dataset.attachMode='end';
+    selected.dataset.x=near.p.x;
+    selected.dataset.y=near.p.y;
+    applyTransform(selected);
+    renderRig(near.rig);
+    drawSelection();
+    selectRig(near.rig);
+    status.textContent='Attached to the existing endpoint. No rope or node was added.'
+  }
+  function snapEndAttachedObject(){if(!selected||selected.dataset.attachMode!=='end')return;const near=nearestEndpoint(+selected.dataset.x,+selected.dataset.y);if(!near)return;selected.dataset.rigId=near.rig.dataset.id;selected.dataset.controlIndex=near.index;selected.dataset.x=near.p.x;selected.dataset.y=near.p.y;applyTransform(selected);drawSelection();selectRig(near.rig);status.textContent='Icon snapped to the nearest rig-line end.'}
+  function attachSelected(){
+    if(!selected){status.textContent='Select an icon first.';return}
+    if(selected.dataset.rigId){status.textContent='This icon is already attached.';return}
+
+    const x=+selected.dataset.x,y=+selected.dataset.y;
+    const endpoint=nearestEndpoint(x,y);
+
+    // An object close to a terminal node always attaches to that existing node.
+    // It must never insert a new control point or extend the rope.
+    if(endpoint && endpoint.d<=90){
+      selected.dataset.rigId=endpoint.rig.dataset.id;
+      selected.dataset.controlIndex=endpoint.index;
+      selected.dataset.attachMode='end';
+      selected.dataset.x=endpoint.p.x;
+      selected.dataset.y=endpoint.p.y;
+      applyTransform(selected);
+      renderRig(endpoint.rig);
+      drawSelection();
+      selectRig(endpoint.rig);
+      status.textContent='Object attached to the existing terminal node. The rope was not extended.';
+      return
+    }
+
+    const near=nearestSegment(x,y);
+    if(!near){status.textContent='Add a rig line first.';return}
+
+    // Only insert an internal point when the object is deliberately attached
+    // away from both terminal endpoints.
+    const points=JSON.parse(near.rig.dataset.points),index=near.segmentIndex+1;
+    points.splice(index,0,{x:near.p.x,y:near.p.y});
+    near.rig.dataset.points=JSON.stringify(points);
+    drawing.querySelectorAll(`[data-rig-id="${near.rig.dataset.id}"]`).forEach(other=>{
+      if(+other.dataset.controlIndex>=index)other.dataset.controlIndex=+other.dataset.controlIndex+1
+    });
+    selected.dataset.rigId=near.rig.dataset.id;
+    selected.dataset.controlIndex=index;
+    selected.dataset.attachMode='line';
+    selected.dataset.x=near.p.x;
+    selected.dataset.y=near.p.y;
+    renderRig(near.rig);
+    drawSelection();
+    selectRig(near.rig);
+    status.textContent='Object attached to an internal rope point.'
+  }
+  function detachSelected(){if(!selected||!selected.dataset.rigId){status.textContent='Selected icon is not attached.';return}const rig=rigLayer.querySelector(`[data-id="${selected.dataset.rigId}"]`),index=+selected.dataset.controlIndex;if(rig){const points=JSON.parse(rig.dataset.points);if(index>0&&index<points.length-1)points.splice(index,1);rig.dataset.points=JSON.stringify(points);drawing.querySelectorAll(`[data-rig-id="${rig.dataset.id}"]`).forEach(other=>{if(other!==selected&&+other.dataset.controlIndex>index)other.dataset.controlIndex=+other.dataset.controlIndex-1});renderRig(rig)}delete selected.dataset.rigId;delete selected.dataset.controlIndex;delete selected.dataset.attachMode;status.textContent='Icon detached from rig line.'}
+  function addIcon(name,markup,data){
+    const g=document.createElementNS(NS,'g');
+    Object.assign(g.dataset,{object:'true',historyId:'obj-'+uid(),name,role:'unassigned',weight:'0',x:'500',y:'375',rotation:'0',scale:'0.5'});
+    const hit=document.createElementNS(NS,'rect');hit.setAttribute('x','-78');hit.setAttribute('y','-78');hit.setAttribute('width','156');hit.setAttribute('height','156');hit.setAttribute('rx','18');hit.classList.add('touch-target');
+    const holder=document.createElementNS(NS,'g');holder.classList.add('icon-visual');holder.setAttribute('transform','translate(-50 -50)');holder.setAttribute('color','#05080c');
+    if(data){const im=document.createElementNS(NS,'image');im.setAttribute('href',data);im.setAttribute('width','100');im.setAttribute('height','100');im.setAttribute('preserveAspectRatio','xMidYMid meet');im.setAttribute('style','filter:grayscale(1) brightness(.06) contrast(2.4);');holder.appendChild(im)}
+    else{const shape=document.createElementNS(NS,'g');shape.setAttribute('fill','none');shape.setAttribute('stroke','#05080c');shape.setAttribute('stroke-width','5');shape.setAttribute('stroke-linecap','round');shape.setAttribute('stroke-linejoin','round');shape.innerHTML=markup;holder.appendChild(shape)}
+    const label=document.createElementNS(NS,'text');label.classList.add('object-name-label');label.setAttribute('x','0');label.setAttribute('y','105');label.textContent=name;label.style.display=document.getElementById('show2dNames')?.checked?'':'none';g.append(hit,holder,label);drawing.appendChild(g);bindIcon(g);select(g);applyTransform(g);status.textContent='Black plan object added. Drag it into position or attach it to a rig line.';return g
+  }
+  function bindIcon(g){g.addEventListener('pointerdown',e=>{e.stopPropagation();select(g);gestureBefore=snapshot();const p=pt(e);drag={start:p,x:+g.dataset.x,y:+g.dataset.y};try{svg.setPointerCapture(e.pointerId)}catch(_){}})}
+  function applyTransform(g){g.setAttribute('transform',`translate(${g.dataset.x} ${g.dataset.y}) rotate(${g.dataset.rotation}) scale(${g.dataset.scale})`)}
+  function update2DObjectNames(){const show=!!document.getElementById('show2dNames')?.checked;drawing.querySelectorAll('[data-object="true"]').forEach(g=>{let label=g.querySelector('.object-name-label');if(!label){label=document.createElementNS(NS,'text');label.classList.add('object-name-label');label.setAttribute('x','0');label.setAttribute('y','105');g.appendChild(label)}label.textContent=g.dataset.name||'Object';label.style.display=show?'':'none'})}
+  function select(g){selected=g;document.getElementById('objectName').value=g.dataset.name||'';document.getElementById('objectRole').value=g.dataset.role||'unassigned';document.getElementById('objectWeight').value=g.dataset.weight||0;document.getElementById('rotation').value=g.dataset.rotation||0;document.getElementById('scale').value=g.dataset.scale||1;document.getElementById('objectOperating').checked=g.dataset.operating==='true';document.getElementById('objectSupportingParts').value=g.dataset.supportingParts||1;document.getElementById('objectForceDirection').value=g.dataset.forceDirection||'up';drawSelection()}
+  function drawSelection(){selection.innerHTML='';if(!selected)return;let b;try{const visual=selected.querySelector('.icon-visual');b=visual?visual.getBBox():selected.getBBox()}catch{return}const r=document.createElementNS(NS,'rect');r.setAttribute('x',b.x-6);r.setAttribute('y',b.y-6);r.setAttribute('width',b.width+12);r.setAttribute('height',b.height+12);r.setAttribute('transform',selected.getAttribute('transform'));r.setAttribute('fill','none');r.setAttribute('stroke','#2563eb');r.setAttribute('stroke-width','3');r.setAttribute('stroke-dasharray','8 6');selection.appendChild(r)}
+  svg.addEventListener('pointerdown',e=>{
+    activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(activePointers.size===2){
+      const pts=[...activePointers.values()];
+      const a=screenToSvg(pts[0].x,pts[0].y),b=screenToSvg(pts[1].x,pts[1].y);
+      pinchStart={
+        distance:Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y),
+        midpoint:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},
+        view:{...view}
+      };
+      drag=null;activeHandle=null;panDrag=null;
+      return;
+    }
+    if(panMode && e.target===svg){
+      const p=screenToSvg(e.clientX,e.clientY);
+      panDrag={pointerId:e.pointerId,start:p,view:{...view}};
+      try{svg.setPointerCapture(e.pointerId)}catch(_){}
+      return;
+    }
+    if(e.target===svg){selection.innerHTML='';selected=null}
+  });
+  svg.addEventListener('pointermove',e=>{
+    if(activePointers.has(e.pointerId))activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(activePointers.size===2 && pinchStart){
+      const pts=[...activePointers.values()];
+      const distance=Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y);
+      if(distance>0){
+        const factor=distance/pinchStart.distance;
+        const nextW=pinchStart.view.w/factor,nextH=pinchStart.view.h/factor;
+        const rx=(pinchStart.midpoint.x-pinchStart.view.x)/pinchStart.view.w;
+        const ry=(pinchStart.midpoint.y-pinchStart.view.y)/pinchStart.view.h;
+        view.w=nextW;view.h=nextH;
+        view.x=pinchStart.midpoint.x-rx*nextW;
+        view.y=pinchStart.midpoint.y-ry*nextH;
+        clampView();applyView();
+      }
+      return;
+    }
+    if(panDrag && panDrag.pointerId===e.pointerId){
+      const p=screenToSvg(e.clientX,e.clientY);
+      view.x=panDrag.view.x+(panDrag.start.x-p.x);
+      view.y=panDrag.view.y+(panDrag.start.y-p.y);
+      clampView();applyView();
+      return;
+    }
+    const p=pt(e);if(activeHandle){
+      const rig=rigLayer.querySelector(`[data-id="${activeHandle.dataset.rigId}"]`),points=JSON.parse(rig.dataset.points);
+      const movedIndex=+activeHandle.dataset.pointIndex;
+      points[movedIndex]={x:p.x,y:p.y};
+      rig.dataset.points=JSON.stringify(points);
+      if(window.SimpleRigLive?.isLive())constrainFiniteRig(rig,movedIndex);else renderRig(rig);
+      return
+    }if(drag&&selected){
+      const x=drag.x+p.x-drag.start.x;
+      const y=drag.y+p.y-drag.start.y;
+
+      if(selected.dataset.rigId){
+        const rig=rigLayer.querySelector(`[data-id="${selected.dataset.rigId}"]`);
+        if(rig){
+          const points=JSON.parse(rig.dataset.points||'[]');
+          const idx=Number(selected.dataset.controlIndex);
+
+          if(points[idx]){
+            points[idx]={x,y};
+            rig.dataset.points=JSON.stringify(points);
+
+            if(window.SimpleRigLive?.isLive()){
+              // In Live mode the selected attached item becomes the manipulated
+              // rope point and the rest of the finite system reacts immediately.
+              constrainFiniteRig(rig,idx)
+            }else if(selected.dataset.attachMode==='end'){
+              selected.dataset.x=String(x);
+              selected.dataset.y=String(y);
+              applyTransform(selected);
+              drawSelection()
+            }else{
+              renderRig(rig);
+              updateAttachedEndObjects(rig)
+            }
+          }
+        }
+      }else{
+        selected.dataset.x=String(x);
+        selected.dataset.y=String(y);
+        applyTransform(selected);
+        drawSelection()
+      }
+    }});function stopDrag(e){
+    if(e&&activePointers.has(e.pointerId))activePointers.delete(e.pointerId);
+    if(activePointers.size<2)pinchStart=null;
+    if(panDrag&&e&&panDrag.pointerId===e.pointerId)panDrag=null;
+    if(drag&&selected){
+      if(selected.dataset.attachMode==='end'&&!window.SimpleRigLive?.isLive()){
+        snapEndAttachedObject()
+      }else if(!selected.dataset.rigId){
+        const end=nearestEndpoint(+selected.dataset.x,+selected.dataset.y);
+        if(end&&end.d<=45){
+          selected.dataset.rigId=end.rig.dataset.id;
+          selected.dataset.controlIndex=end.index;
+          selected.dataset.attachMode='end';
+          selected.dataset.x=end.p.x;
+          selected.dataset.y=end.p.y;
+          applyTransform(selected);
+          renderRig(end.rig);
+          drawSelection();
+          status.textContent='Object snapped to the existing rope endpoint.'
+        }
+      }
+    }
+    if(gestureBefore){commitHistory(gestureBefore);gestureBefore=null}
+    drag=null;activeHandle=null;
+  }
+  svg.addEventListener('pointerup',stopDrag);
+  svg.addEventListener('pointercancel',stopDrag);
+  window.addEventListener('pointerup',stopDrag)
+  document.getElementById('zoomInBtn').addEventListener('click',()=>zoomAt(1.25,view.x+view.w/2,view.y+view.h/2));
+  document.getElementById('zoomOutBtn').addEventListener('click',()=>zoomAt(0.8,view.x+view.w/2,view.y+view.h/2));
+  document.getElementById('zoomResetBtn').addEventListener('click',resetZoom);
+  document.getElementById('panTool').addEventListener('click',()=>{
+    panMode=!panMode;
+    document.getElementById('panTool').classList.toggle('active',panMode);
+    svg.classList.toggle('pan-mode',panMode);
+    status.textContent=panMode?'Pan mode on. Drag the blank canvas to move around.':'Pan mode off.';
+  });
+  svg.addEventListener('wheel',e=>{
+    e.preventDefault();
+    const centre=screenToSvg(e.clientX,e.clientY);
+    zoomAt(e.deltaY<0?1.15:0.87,centre.x,centre.y);
+  },{passive:false});
+  let lastTap=0;
+  svg.addEventListener('pointerup',e=>{
+    if(e.pointerType==='touch'){
+      const now=Date.now();
+      if(now-lastTap<320){
+        const centre=screenToSvg(e.clientX,e.clientY);
+        zoomAt(1.5,centre.x,centre.y);
+        lastTap=0;
+      }else lastTap=now;
+    }
+  });
+  
+  const equipmentCatalogue=[{"id":"petzl-spin-s1","manufacturer":"Petzl","model":"SPIN S1","category":"Pulley","iconName":"Pulley","wll":5,"wllUnit":"kN","mbs":23,"mbsUnit":"kN","ropeRange":"7–11 mm","efficiency":"91%","verified":true,"source":"Petzl official product specifications"},{"id":"petzl-spin-s1-open","manufacturer":"Petzl","model":"SPIN S1 OPEN","category":"Pulley","iconName":"Pulley","wll":5,"wllUnit":"kN","mbs":23,"mbsUnit":"kN","ropeRange":"7–11 mm","efficiency":"91%","verified":true,"source":"Petzl official product specifications"},{"id":"petzl-spin-l1","manufacturer":"Petzl","model":"SPIN L1","category":"Pulley","iconName":"Pulley","wll":8,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"7–13 mm","efficiency":"95%","verified":true,"source":"Petzl official product specifications"},{"id":"petzl-spin-l2","manufacturer":"Petzl","model":"SPIN L2","category":"Double pulley","iconName":"Double pulley","wll":8,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"7–13 mm","efficiency":"95%","verified":true,"source":"Petzl official product specifications"},{"id":"petzl-spin-l1d","manufacturer":"Petzl","model":"SPIN L1D","category":"Progress capture pulley","iconName":"Pulley","wll":6,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"8–13 mm","efficiency":"93%","verified":true,"source":"Petzl official product specifications"},{"id":"petzl-rescue-s","manufacturer":"Petzl","model":"RESCUE S","category":"Pulley","iconName":"Pulley","wll":5,"wllUnit":"kN","mbs":18,"mbsUnit":"kN","ropeRange":"6–11 mm","efficiency":"91%","verified":true,"source":"Petzl official product specifications"},{"id":"petzl-rescue-m","manufacturer":"Petzl","model":"RESCUE M","category":"Pulley","iconName":"Pulley","wll":8,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"6–13 mm","efficiency":"95%","verified":true,"source":"Petzl official product specifications"},{"id":"petzl-minder-s1","manufacturer":"Petzl","model":"MINDER S1","category":"Prusik pulley","iconName":"Pulley","wll":5,"wllUnit":"kN","mbs":23,"mbsUnit":"kN","ropeRange":"6–11 mm","efficiency":"91%","verified":true,"source":"Petzl official product specifications"},{"id":"petzl-reeve","manufacturer":"Petzl","model":"REEVE","category":"Carriage pulley","iconName":"Double pulley","wll":8,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"7–13 mm","efficiency":"95%","verified":true,"source":"Petzl official product specifications"},{"id":"isc-rp248","manufacturer":"ISC","model":"RP248 200-Series Compact","category":"Rigging pulley","iconName":"Pulley","wll":20,"wllUnit":"kN","mbs":100,"mbsUnit":"kN","ropeRange":"≤14 mm","efficiency":"Not published","verified":true,"source":"ISC official product specifications"},{"id":"isc-rp251","manufacturer":"ISC","model":"RP251 200-Series Small","category":"Rigging pulley","iconName":"Pulley","wll":50,"wllUnit":"kN","mbs":250,"mbsUnit":"kN","ropeRange":"≤16 mm","efficiency":"Not published","verified":true,"source":"ISC official product specifications"},{"id":"isc-rp255","manufacturer":"ISC","model":"RP255 200-Series Medium","category":"Rigging pulley","iconName":"Pulley","wll":60,"wllUnit":"kN","mbs":300,"mbsUnit":"kN","ropeRange":"≤20 mm","efficiency":"Not published","verified":true,"source":"ISC official product specifications"},{"id":"isc-rp257","manufacturer":"ISC","model":"RP257 200-Series Large","category":"Rigging pulley","iconName":"Pulley","wll":76,"wllUnit":"kN","mbs":380,"mbsUnit":"kN","ropeRange":"≤26 mm","efficiency":"Not published","verified":true,"source":"ISC official product specifications"},{"id":"rock-omni-11","manufacturer":"Rock Exotica","model":"Omni-Block 1.1 Single","category":"Pulley","iconName":"Pulley","wll":5,"wllUnit":"kN","mbs":23,"mbsUnit":"kN","ropeRange":"≤13 mm","efficiency":"Not published","verified":true,"source":"Rock Exotica official product specifications"},{"id":"rock-omni-11d","manufacturer":"Rock Exotica","model":"Omni-Block 1.1 Double","category":"Double pulley","iconName":"Double pulley","wll":7.5,"wllUnit":"kN","mbs":30,"mbsUnit":"kN","ropeRange":"≤13 mm","efficiency":"Not published","verified":true,"source":"Rock Exotica official product specifications"},{"id":"rock-omni-15","manufacturer":"Rock Exotica","model":"Omni-Block 1.5 Single","category":"Pulley","iconName":"Pulley","wll":8,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"≤13 mm","efficiency":"Not published","verified":true,"source":"Rock Exotica official product specifications"},{"id":"rock-omni-15d","manufacturer":"Rock Exotica","model":"Omni-Block 1.5 Double","category":"Double pulley","iconName":"Double pulley","wll":8,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"≤13 mm","efficiency":"Not published","verified":true,"source":"Rock Exotica official product specifications"},{"id":"rock-omni-20","manufacturer":"Rock Exotica","model":"Omni-Block 2.0 Single","category":"Pulley","iconName":"Pulley","wll":8,"wllUnit":"kN","mbs":36,"mbsUnit":"kN","ropeRange":"≤13 mm","efficiency":"Not published","verified":true,"source":"Rock Exotica official product specifications"},{"id":"rock-omni-20d","manufacturer":"Rock Exotica","model":"Omni-Block 2.0 Double","category":"Double pulley","iconName":"Double pulley","wll":10,"wllUnit":"kN","mbs":40,"mbsUnit":"kN","ropeRange":"≤13 mm","efficiency":"Not published","verified":true,"source":"Rock Exotica official product specifications"},{"id":"rock-omni-26","manufacturer":"Rock Exotica","model":"Omni-Block 2.6 Single","category":"Pulley","iconName":"Pulley","wll":20,"wllUnit":"kN","mbs":80,"mbsUnit":"kN","ropeRange":"≤13 mm","efficiency":"Not published","verified":true,"source":"Rock Exotica official product specifications"},{"id":"harken-wingman","manufacturer":"Harken Safety & Rescue","model":"WingMan system","category":"Double pulley haul system","iconName":"Double pulley","wll":2.77,"wllUnit":"kN (282 kg rated load)","mbs":36,"mbsUnit":"kN","ropeRange":"8 mm supplied rope","efficiency":"System dependent","verified":true,"source":"Harken Safety & Rescue official 2026 product overview"}];
+  let selectedCatalogueItem=null;
+  const equipmentSearch=document.getElementById('equipmentSearch');
+  const equipmentSuggestions=document.getElementById('equipmentSuggestions');
+  const equipmentPreview=document.getElementById('equipmentPreview');
+  const addCatalogueItemBtn=document.getElementById('addCatalogueItemBtn');
+
+  function equipmentLabel(item){return `${item.manufacturer} ${item.model}`}
+
+  function renderEquipmentSuggestions(query){
+    const q=query.trim().toLowerCase();
+    equipmentSuggestions.innerHTML='';
+    if(!q){equipmentSuggestions.classList.remove('open');return}
+    const terms=q.split(/\s+/).filter(Boolean);
+    const matches=equipmentCatalogue.filter(item=>{
+      const hay=[item.manufacturer,item.model,item.category,item.source].join(' ').toLowerCase();
+      return terms.every(term=>hay.includes(term));
+    }).slice(0,20);
+    if(!matches.length){
+      const empty=document.createElement('div');
+      empty.className='equipment-preview';
+      empty.textContent='No catalogue match. Create a custom item instead.';
+      equipmentSuggestions.appendChild(empty);
+      equipmentSuggestions.classList.add('open');
+      return;
+    }
+    matches.forEach(item=>{
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='equipment-suggestion';
+      button.setAttribute('role','option');
+      button.innerHTML=`<strong>${equipmentLabel(item)}</strong><span>${item.category} · ${item.wll!=null?'WLL '+item.wll+' '+item.wllUnit:'specification check required'}</span>`;
+      button.addEventListener('click',()=>selectCatalogueItem(item));
+      equipmentSuggestions.appendChild(button);
+    });
+    equipmentSuggestions.classList.add('open');
+  }
+
+  function selectCatalogueItem(item){
+    selectedCatalogueItem=item;
+    equipmentSearch.value=equipmentLabel(item);
+    equipmentSuggestions.classList.remove('open');
+    addCatalogueItemBtn.disabled=false;
+    equipmentPreview.innerHTML=`
+      <dl>
+        <dt>Category</dt><dd>${item.category}</dd>
+        <dt>WLL/SWL</dt><dd>${item.wll!=null?item.wll+' '+item.wllUnit:'Check manufacturer data'}</dd>
+        <dt>MBS</dt><dd>${item.mbs??'Not recorded'} ${item.mbsUnit}</dd>
+        <dt>Rope range</dt><dd>${item.ropeRange}</dd>
+        <dt>Efficiency</dt><dd>${item.efficiency}</dd>
+        <dt>Status</dt><dd>${item.verified?'Manufacturer verified':'Verify before safety use'}</dd>
+      </dl>`;
+  }
+
+
+  function updateAppliedEquipmentPanel(){
+    const panel=document.getElementById('appliedEquipment');
+    if(!selected){panel.textContent='No object selected.';return}
+    if(!selected.dataset.equipmentId){
+      panel.innerHTML=`<strong>${selected.dataset.name||'Object'}</strong><br>No catalogue equipment applied.`;
+      return;
+    }
+    panel.innerHTML=`<strong>${selected.dataset.equipmentName||selected.dataset.name}</strong><br>${selected.dataset.equipmentCategory||''}<br>WLL/SWL: ${selected.dataset.wll||'Check data'} ${selected.dataset.wllUnit||''}<br>MBS: ${selected.dataset.mbs||'Check data'} ${selected.dataset.mbsUnit||''}<br><span class="${selected.dataset.verified==='true'?'verified-badge':'warning-badge'}">${selected.dataset.verified==='true'?'Manufacturer values recorded':'Verify exact model/specification'}</span>`;
+  }
+
+  function applyEquipmentToSelected(item){
+    if(!selected){status.textContent='Select an object on the diagram first.';return}
+    const before=snapshot();
+    Object.assign(selected.dataset,{
+      equipmentId:item.id,
+      equipmentName:equipmentLabel(item),
+      equipmentManufacturer:item.manufacturer,
+      equipmentModel:item.model,
+      equipmentCategory:item.category||'Equipment',
+      equipmentSource:item.source||'',
+      ropeRange:item.ropeRange||'',
+      efficiency:item.efficiency||'',
+      wll:item.wll==null?'':String(item.wll),
+      wllUnit:item.wllUnit||'',
+      mbs:item.mbs==null?'':String(item.mbs),
+      mbsUnit:item.mbsUnit||'',
+      verified:String(!!item.verified),
+      name:equipmentLabel(item)
+    });
+    document.getElementById('objectName').value=selected.dataset.name;
+    updateAppliedEquipmentPanel();
+    drawSelection();
+    commitHistory(before);
+    status.textContent=`Applied ${equipmentLabel(item)} to the selected object. Position, scale, rotation and rope attachment were preserved.`;
+  }
+
+  function addEquipmentRecord(item,imageData=null){
+    const markup=icons[item.iconName]||icons['Anchor']||Object.values(icons)[0];
+    const placed=addIcon(equipmentLabel(item),markup,imageData);
+    Object.assign(placed.dataset,{
+      equipmentId:item.id||`custom-${Date.now()}`,
+      equipmentName:equipmentLabel(item),
+      equipmentCategory:item.category||'Custom',
+      wll:String(item.wll||''),
+      wllUnit:item.wllUnit||'',
+      mbs:String(item.mbs||''),
+      mbsUnit:item.mbsUnit||'',
+      verified:String(!!item.verified)
+    });
+    status.textContent=`Added ${equipmentLabel(item)} to the plan.`;
+  }
+
+  equipmentSearch.addEventListener('input',()=>{
+    selectedCatalogueItem=null;
+    addCatalogueItemBtn.disabled=true;
+    equipmentPreview.textContent='Choose a result from the dropdown.';
+    renderEquipmentSuggestions(equipmentSearch.value);
+  });
+
+  equipmentSearch.addEventListener('keydown',e=>{
+    if(e.key==='Escape')equipmentSuggestions.classList.remove('open');
+  });
+
+  addCatalogueItemBtn.addEventListener('click',()=>{
+    if(selectedCatalogueItem)applyEquipmentToSelected(selectedCatalogueItem);
+  });
+
+  document.addEventListener('pointerdown',e=>{
+    if(!e.target.closest('.equipment-search-wrap'))equipmentSuggestions.classList.remove('open');
+  });
+
+  const customItemPanel=document.getElementById('customItemPanel');
+  document.getElementById('openCustomItemBtn').addEventListener('click',()=>{
+    customItemPanel.hidden=false;
+    document.getElementById('customItemName').focus();
+  });
+  document.getElementById('cancelCustomItemBtn').addEventListener('click',()=>customItemPanel.hidden=true);
+
+  document.getElementById('saveCustomItemBtn').addEventListener('click',()=>{
+    const name=document.getElementById('customItemName').value.trim();
+    if(!name){status.textContent='Enter a name for the custom item.';return}
+    const category=document.getElementById('customItemCategory').value;
+    const wll=Number(document.getElementById('customItemWll').value||0);
+    const unit=document.getElementById('customItemUnit').value;
+    const mbs=Number(document.getElementById('customItemMbs').value||0);
+    const file=document.getElementById('customItemImage').files[0];
+    const item={
+      id:`custom-${Date.now()}`,
+      manufacturer:'Custom',
+      model:name,
+      category,
+      wll,
+      wllUnit:unit,
+      mbs:mbs||null,
+      mbsUnit:mbs?unit:'',
+      verified:false,
+      iconName:'Anchor'
+    };
+    if(file){
+      const reader=new FileReader();
+      reader.onload=()=>{
+        addEquipmentRecord(item,reader.result);
+        customItemPanel.hidden=true;
+      };
+      reader.readAsDataURL(file);
+    }else{
+      addEquipmentRecord(item);
+      customItemPanel.hidden=true;
+    }
+  });
+
+  function renderIcons(filter=''){
+    const host=document.getElementById('builtins');
+    host.innerHTML='';
+    const term=filter.trim().toLowerCase();
+    SIMPLE_RIG_LIBRARY.forEach((category,categoryIndex)=>{
+      const assets=category.assets.filter(asset=>
+        !term||asset.name.toLowerCase().includes(term)||category.name.toLowerCase().includes(term)
+      );
+      if(!assets.length)return;
+      const folder=document.createElement('details');
+      folder.className='asset-folder';
+      folder.open=categoryIndex<2||!!term;
+      const summary=document.createElement('summary');
+      summary.innerHTML=`<span>${category.name}</span><span class="asset-folder-count">${assets.length}</span>`;
+      const grid=document.createElement('div');
+      grid.className='asset-folder-grid';
+      assets.forEach(asset=>{
+        const b=document.createElement('button');
+        b.type='button';
+        b.className='asset library-item';
+        b.title=`Add ${asset.name}`;
+        b.innerHTML=`<img src="${asset.icon}" alt=""><span>${asset.name}</span>`;
+        b.addEventListener('click',()=>addIcon(asset.name,'',asset.icon));
+        grid.appendChild(b);
+      });
+      folder.append(summary,grid);
+      host.appendChild(folder);
+    });
+  }
+    ['deleteBtn','undoBtn','redoBtn','duplicateBtn','attachBtn','attachEndBtn','detachBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.addEventListener('pointerdown',e=>e.stopPropagation())});
+  window.addEventListener('keydown',event=>{
+    const tag=(event.target?.tagName||'').toLowerCase(),typing=tag==='input'||tag==='textarea'||tag==='select'||event.target?.isContentEditable;
+    if((event.key==='Delete'||event.key==='Backspace')&&!typing){event.preventDefault();recordAction(deleteSelection)}
+    if((event.ctrlKey||event.metaKey)&&!event.shiftKey&&event.key.toLowerCase()==='z'){event.preventDefault();undo()}
+    if((event.ctrlKey||event.metaKey)&&((event.shiftKey&&event.key.toLowerCase()==='z')||event.key.toLowerCase()==='y')){event.preventDefault();redo()}
+  });
+  
+  document.getElementById('objectOperating').addEventListener('change',e=>{
+    if(!selected)return;
+    if(e.target.checked)drawing.querySelectorAll('[data-object="true"]').forEach(o=>{if(o!==selected)o.dataset.operating='false'});
+    selected.dataset.operating=e.target.checked?'true':'false';
+    status.textContent=e.target.checked?'Operating point marked.':'Operating point removed.';
+    window.dispatchEvent(new CustomEvent('simplerig-operating-change'))
+  });
+  document.getElementById('objectSupportingParts').addEventListener('input',e=>{if(selected)selected.dataset.supportingParts=String(Math.max(.1,Number(e.target.value)||1))});
+  document.getElementById('objectForceDirection').addEventListener('change',e=>{if(selected)selected.dataset.forceDirection=e.target.value});
+
+  document.getElementById('librarySearch2d').addEventListener('input',e=>renderIcons(e.target.value));document.getElementById('show2dNames').addEventListener('change',update2DObjectNames);
+  document.getElementById('addRigLineBtn').addEventListener('click',()=>recordAction(addRigLine));document.getElementById('attachBtn').addEventListener('click',()=>recordAction(attachSelected));document.getElementById('attachEndBtn').addEventListener('click',()=>recordAction(attachEndSelected));document.getElementById('detachBtn').addEventListener('click',()=>recordAction(detachSelected));document.getElementById('duplicateBtn').addEventListener('click',()=>recordAction(duplicateSelected));document.getElementById('deleteBtn').addEventListener('click',()=>recordAction(deleteSelection));document.getElementById('undoBtn').addEventListener('click',undo);document.getElementById('redoBtn').addEventListener('click',redo);document.getElementById('rigLineColour').addEventListener('pointerdown',()=>controlBefore=snapshot());document.getElementById('rigLineColour').addEventListener('input',e=>{if(!selectedRig){status.textContent='Select a rig line first.';return}selectedRig.dataset.colour=e.target.value;renderRig(selectedRig)});document.getElementById('rigLineColour').addEventListener('change',()=>{commitHistory(controlBefore);controlBefore=null});
+  document.getElementById('addCustomBtn').addEventListener('click',()=>{const name=document.getElementById('customName').value.trim(),file=document.getElementById('customFile').files[0];if(!name||!file)return;const r=new FileReader();r.onload=()=>{const b=document.createElement('button');b.type='button';b.className='asset';b.innerHTML=`<img src="${r.result}" alt=""><span>${name}</span>`;b.addEventListener('click',()=>addIcon(name,'',r.result));document.getElementById('customAssets').appendChild(b)};r.readAsDataURL(file)});
+  document.getElementById('backgroundFile').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;const before=snapshot();const r=new FileReader();r.onload=()=>{background.innerHTML=`<image id="backgroundImage" href="${r.result}" x="0" y="0" width="1000" height="750" preserveAspectRatio="xMidYMid slice" pointer-events="none" opacity="${document.getElementById('backgroundOpacity').value}"/>`;status.textContent='Background uploaded.';commitHistory(before)};r.readAsDataURL(file)});document.getElementById('backgroundOpacity').addEventListener('input',e=>document.getElementById('backgroundImage')?.setAttribute('opacity',e.target.value));document.getElementById('removeBackground').addEventListener('click',()=>recordAction(()=>background.innerHTML=''));
+  function historyControl(id,event,fn){const el=document.getElementById(id);el.addEventListener('focus',()=>controlBefore=snapshot());el.addEventListener('pointerdown',()=>{if(!controlBefore)controlBefore=snapshot()});el.addEventListener(event,fn);el.addEventListener('change',()=>{commitHistory(controlBefore);controlBefore=null});el.addEventListener('blur',()=>{commitHistory(controlBefore);controlBefore=null})}historyControl('objectName','input',e=>{if(selected){selected.dataset.name=e.target.value;update2DObjectNames()}});historyControl('objectRole','change',e=>{if(selected)selected.dataset.role=e.target.value});historyControl('objectWeight','input',e=>{if(selected)selected.dataset.weight=e.target.value});historyControl('rotation','input',e=>{if(selected){selected.dataset.rotation=e.target.value;applyTransform(selected);drawSelection()}});historyControl('scale','input',e=>{if(selected){selected.dataset.scale=e.target.value;applyTransform(selected);drawSelection()}});
+  function cleanExportSvg(){
+    const clone=svg.cloneNode(true);clone.setAttribute('viewBox','0 0 1000 750');clone.setAttribute('width','1000');clone.setAttribute('height','750');
+    const sel=clone.querySelector('#selectionLayer');if(sel)sel.innerHTML='';
+    clone.querySelectorAll('.rig-handle,.rig-hit,.touch-target').forEach(el=>el.remove());clone.querySelectorAll('.object-name-label').forEach(el=>{if(el.style.display==='none')el.remove()});
+    clone.querySelectorAll('[data-visible="true"]').forEach(el=>el.setAttribute('vector-effect','non-scaling-stroke'));
+    const bgRect=document.createElementNS(NS,'rect');bgRect.setAttribute('x','0');bgRect.setAttribute('y','0');bgRect.setAttribute('width','1000');bgRect.setAttribute('height','750');bgRect.setAttribute('fill','#ffffff');clone.insertBefore(bgRect,clone.firstChild);
+    return new XMLSerializer().serializeToString(clone)
+  }
+  async function diagramCanvas(scaleFactor=2){
+    const source=cleanExportSvg(),blob=new Blob([source],{type:'image/svg+xml;charset=utf-8'}),url=URL.createObjectURL(blob),img=new Image();
+    await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});
+    const canvas=document.createElement('canvas');canvas.width=1000*scaleFactor;canvas.height=750*scaleFactor;const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);URL.revokeObjectURL(url);return canvas
+  }
+  function downloadBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+  async function downloadDiagramImage(){try{status.textContent='Creating diagram image...';const canvas=await diagramCanvas(2);canvas.toBlob(blob=>{const base=[document.getElementById('showName').value,document.getElementById('gagName').value].filter(Boolean).join('-').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-|-$/g,'')||'rig-plan';downloadBlob(blob,base+'-diagram.png');status.textContent='Diagram image downloaded.'},'image/png')}catch(err){status.textContent='Image export failed: '+err.message}}
+  function pdfEscape(text){return String(text).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)').replace(/[^\x20-\x7E]/g,'-')}
+  function base64Bytes(dataUrl){const raw=atob(dataUrl.split(',')[1]),out=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);return out}
+  function buildSinglePagePdf(jpegBytes,imgW,imgH,equipment,ratio,details){
+    const enc=new TextEncoder(),parts=[],offsets=[0];let length=0;
+    const push=x=>{const b=typeof x==='string'?enc.encode(x):x;parts.push(b);length+=b.length};
+    push('%PDF-1.4\n%PDF\n');
+    function obj(n,body){offsets[n]=length;push(`${n} 0 obj\n`);push(body);push('\nendobj\n')}
+    obj(1,'<< /Type /Catalog /Pages 2 0 R >>');obj(2,'<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    obj(3,'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 841.89 595.28] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> /XObject << /Im1 4 0 R >> >> /Contents 7 0 R >>');
+    offsets[4]=length;push(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${imgW} /Height ${imgH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`);push(jpegBytes);push('\nendstream\nendobj\n');
+    obj(5,'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');obj(6,'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+    const c=[];const t=(x,y,size,text,bold=false)=>c.push(`BT /${bold?'F2':'F1'} ${size} Tf ${x} ${y} Td (${pdfEscape(text)}) Tj ET`);
+    t(30,570,18,details.show||'Rig Plan',true);t(710,570,8,new Date().toLocaleDateString('en-GB'));
+    if(details.gag)t(30,553,10,`Gag/Move: ${details.gag}`,true);if(details.location)t(410,553,10,`Location: ${details.location}`);
+    c.push('0.78 G 30 111 782 430 re S 0 G');c.push('q 782 0 0 430 30 111 cm /Im1 Do Q');
+    t(30,94,10,'Calculation summary',true);t(30,78,8,`Load ${ratio.load} kg   Main ${ratio.main}:1   Assist ${ratio.assist}:1   Efficiency ${ratio.eff}%`);
+    t(30,64,8,`Main tension ${ratio.tension}   Estimated pull ${ratio.pull}`);
+    t(430,94,10,'Equipment used',true);
+    const rows=equipment.length?equipment:[{name:'No catalogue equipment recorded',count:1}];let y=79;
+    rows.slice(0,4).forEach(r=>{t(430,y,8,`${r.count}x ${r.name}`,true);y-=13});if(rows.length>4)t(430,y,8,`+ ${rows.length-4} additional equipment types`);
+    t(30,18,7,'Planning aid only. Verify manufacturer data, configuration ratings and calculations before use.');
+    const stream=c.join('\n');obj(7,`<< /Length ${enc.encode(stream).length} >>\nstream\n${stream}\nendstream`);
+    const xref=length;push(`xref\n0 8\n0000000000 65535 f \n`);for(let i=1;i<=7;i++)push(String(offsets[i]).padStart(10,'0')+' 00000 n \n');push(`trailer\n<< /Size 8 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+    const out=new Uint8Array(length);let pos=0;parts.forEach(b=>{out.set(b,pos);pos+=b.length});return new Blob([out],{type:'application/pdf'})
+  }
+  function equipmentSummary(){const map=new Map();drawing.querySelectorAll('[data-object="true"]').forEach(el=>{const name=el.dataset.equipmentName||el.dataset.name||'Unnamed item',key=[name,el.dataset.wll,el.dataset.wllUnit,el.dataset.mbs,el.dataset.mbsUnit].join('|');if(!map.has(key))map.set(key,{name,category:el.dataset.equipmentCategory||el.dataset.role||'',wll:el.dataset.wll?`${el.dataset.wll} ${el.dataset.wllUnit||''}`:'',mbs:el.dataset.mbs?`${el.dataset.mbs} ${el.dataset.mbsUnit||''}`:'',count:0});map.get(key).count++});return [...map.values()]}
+  async function downloadRigPdf(){try{status.textContent='Creating single-page PDF...';const canvas=await diagramCanvas(1.5),jpeg=canvas.toDataURL('image/jpeg',0.9),ratio={load:document.getElementById('loadWeight').value||0,main:document.getElementById('mainRatio').value||1,assist:document.getElementById('assistRatio').value||1,eff:document.getElementById('efficiency').value||100,tension:document.getElementById('mainTension').textContent,pull:document.getElementById('practicalPull').textContent},details={show:document.getElementById('showName').value.trim(),gag:document.getElementById('gagName').value.trim(),location:document.getElementById('locationName').value.trim()},pdf=buildSinglePagePdf(base64Bytes(jpeg),canvas.width,canvas.height,equipmentSummary(),ratio,details),base=[details.show,details.gag].filter(Boolean).join('-').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-|-$/g,'')||'rig-plan';downloadBlob(pdf,base+'-report.pdf');status.textContent='Single-page PDF downloaded.'}catch(err){console.error(err);status.textContent='PDF export failed: '+err.message}}
+    document.getElementById('downloadImageBtn').addEventListener('click',downloadDiagramImage);document.getElementById('downloadPdfBtn').addEventListener('click',downloadRigPdf);
+  ['showName','gagName','locationName'].forEach(id=>{const field=document.getElementById(id);try{field.value=localStorage.getItem('rigPlan.'+id)||''}catch(_){field.value=''}field.addEventListener('input',()=>{try{localStorage.setItem('rigPlan.'+id,field.value)}catch(_){}})});function calc(){const load=+document.getElementById('loadWeight').value||0,main=+document.getElementById('mainRatio').value||1,assist=+document.getElementById('assistRatio').value||1,eff=Math.max(.1,(+document.getElementById('efficiency').value||100)/100),mainTension=load/main,ideal=mainTension/assist,practical=ideal/eff;document.getElementById('mainTension').textContent=mainTension.toFixed(1)+' kgf';document.getElementById('idealPull').textContent=ideal.toFixed(1)+' kgf';document.getElementById('practicalPull').textContent=practical.toFixed(1)+' kgf';document.getElementById('assistPulleyLoad').textContent=(practical*2).toFixed(1)+' kgf'}['loadWeight','mainRatio','assistRatio','efficiency'].forEach(id=>document.getElementById(id).addEventListener('input',calc));applyView();renderIcons();addRigLine();calc();updateHistoryButtons();
+window.rebindAll=rebindAll;window.update2DObjectNames=update2DObjectNames;window.renderSvgToJpeg=async function(){const c=await diagramCanvas(1.5);return c.toDataURL('image/jpeg',0.94)};window.buildSinglePagePdf=buildSinglePagePdf;
+window.SimpleRig2D={
+  isActive(){return !document.getElementById('workspace2d').classList.contains('hidden-workspace')},
+  getState(){return snapshot()},
+  setState(json){restoreSnapshot(json)},
+  getOperating(){
+    return [...drawing.querySelectorAll('[data-object="true"]')].find(o=>o.dataset.operating==='true')||null
+  },
+  captureFiniteLines(){setAllFiniteLengths()},
+  clearFiniteLines(){clearFiniteLengths()},
+  simulate(forceKn,duration){
+    const op=this.getOperating();
+    if(!op)return {ok:false,message:'No 2D operating point is marked.'};
+    const ratio=Math.max(.1,Number(document.getElementById('mainRatio').value)||1);
+    const assist=Math.max(.1,Number(document.getElementById('assistRatio').value)||1);
+    const efficiency=Math.max(.01,(Number(document.getElementById('efficiency').value)||100)/100);
+    const parts=Math.max(.1,Number(op.dataset.supportingParts)||ratio);
+    const role=op.dataset.role||'unassigned';
+    const effective=(role==='fixed'||role==='redirect')?1:(role==='assist'?assist:parts);
+    const outputN=forceKn*1000*effective*efficiency;
+    const loadKg=Math.max(.1,Number(op.dataset.weight)||Number(document.getElementById('loadWeight').value)||100);
+    const loadN=loadKg*9.80665;
+    const direction=op.dataset.forceDirection||'up';
+    const signedNet=(direction==='up'||direction==='right')?outputN-loadN:outputN+loadN;
+    const acceleration=signedNet/loadKg;
+    const distance=Math.max(-180,Math.min(180,.5*acceleration*duration*duration*10));
+    const dx=direction==='right'?distance:direction==='left'?-distance:0;
+    const dy=direction==='up'?-distance:direction==='down'?distance:0;
+    const affected=[];
+    drawing.querySelectorAll('[data-object="true"]').forEach(obj=>{
+      const isLoad=obj===op||obj.dataset.role==='travelling'||Number(obj.dataset.weight)>0;
+      if(!isLoad)return;
+      const nextX=(Number(obj.dataset.x)||0)+dx,nextY=(Number(obj.dataset.y)||0)+dy;
+      if(obj.dataset.rigId){
+        const rig=rigLayer.querySelector(`[data-id="${obj.dataset.rigId}"]`);
+        if(rig){
+          const pts=JSON.parse(rig.dataset.points);
+          const idx=Number(obj.dataset.controlIndex);
+          if(pts[idx]){
+            pts[idx]={x:nextX,y:nextY};
+            rig.dataset.points=JSON.stringify(pts);
+            const terminal=idx===0||idx===pts.length-1;
+            if(terminal)constrainFiniteRig(rig,idx);else{renderRig(rig);updateAttachedEndObjects(rig)}
+          }
+        }
+      }else{
+        obj.dataset.x=String(nextX);obj.dataset.y=String(nextY);applyTransform(obj)
+      }
+      affected.push(obj.dataset.name||'Object')
+    });
+    drawSelection();
+    let arrow=document.getElementById('simForceArrow2d');
+    if(!arrow){arrow=document.createElementNS(NS,'g');arrow.id='simForceArrow2d';arrow.classList.add('sim-force-arrow');selection.appendChild(arrow)}
+    const x=Number(op.dataset.x)||0,y=Number(op.dataset.y)||0;
+    const ax=direction==='right'?70:direction==='left'?-70:0,ay=direction==='up'?-70:direction==='down'?70:0;
+    arrow.innerHTML=`<line x1="${x}" y1="${y}" x2="${x+ax}" y2="${y+ay}" stroke="#ef4444" stroke-width="8"/><circle cx="${x+ax}" cy="${y+ay}" r="9" fill="#ef4444"/>`;
+    return {ok:true,effective,outputN,loadN,acceleration,distance,affected,message:`${forceKn.toFixed(2)} kN applied. Estimated output ${(outputN/1000).toFixed(2)} kN; movement ${Math.abs(distance/10).toFixed(2)} m preview.`}
+  }
+};
+} catch (error) { console.error(error); const s=document.getElementById('status'); if(s) s.textContent='Startup error: '+error.message; }
+})();
+
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./service-worker.js').catch(function (error) {
+      console.warn('Service worker registration failed:', error);
+    });
+  });
+}
+</script>
+
+
+<script id="sr3Standalone">
+(()=>{
+'use strict';
+const SIMPLE_RIG_LIBRARY=[{"id":"pulleys","name":"Pulleys","assets":[{"id":"single_pulley","name":"Single Pulley","icon":"unique-icons/single_pulley.svg","model":"Pulleys/3d/single_pulley.glb","spec":"Pulleys/specs/single_pulley.json","thumbnail":"unique-icons/single_pulley.svg","triangles":10264},{"id":"double_pulley","name":"Double Pulley","icon":"unique-icons/double_pulley.svg","model":"Pulleys/3d/double_pulley.glb","spec":"Pulleys/specs/double_pulley.json","thumbnail":"unique-icons/double_pulley.svg","triangles":15128},{"id":"rescue_pulley","name":"Rescue Pulley","icon":"unique-icons/rescue_pulley.svg","model":"Pulleys/3d/rescue_pulley.glb","spec":"Pulleys/specs/rescue_pulley.json","thumbnail":"unique-icons/rescue_pulley.svg","triangles":10276},{"id":"progress_capture_pulley","name":"Progress Capture Pulley","icon":"unique-icons/progress_capture_pulley.svg","model":"Pulleys/3d/progress_capture_pulley.glb","spec":"Pulleys/specs/progress_capture_pulley.json","thumbnail":"unique-icons/progress_capture_pulley.svg","triangles":10532}]},{"id":"hardware","name":"Hardware","assets":[{"id":"rope_grab","name":"Rope Grab","icon":"unique-icons/rope_grab.svg","model":"Hardware/3d/rope_grab.glb","spec":"Hardware/specs/rope_grab.json","thumbnail":"unique-icons/rope_grab.svg","triangles":7564},{"id":"clutch","name":"Clutch","icon":"unique-icons/clutch.svg","model":"Hardware/3d/clutch.glb","spec":"Hardware/specs/clutch.json","thumbnail":"unique-icons/clutch.svg","triangles":5144},{"id":"bollard","name":"Bollard","icon":"unique-icons/bollard.svg","model":"Hardware/3d/bollard.glb","spec":"Hardware/specs/bollard.json","thumbnail":"unique-icons/bollard.svg","triangles":1024},{"id":"descender","name":"Descender","icon":"unique-icons/descender.svg","model":"Hardware/3d/descender.glb","spec":"Hardware/specs/descender.json","thumbnail":"unique-icons/descender.svg","triangles":5888},{"id":"carabiner","name":"Carabiner","icon":"unique-icons/carabiner.svg","model":"Hardware/3d/carabiner.glb","spec":"Hardware/specs/carabiner.json","thumbnail":"unique-icons/carabiner.svg","triangles":5772},{"id":"shackle","name":"Bow Shackle","icon":"unique-icons/shackle.svg","model":"Hardware/3d/shackle.glb","spec":"Hardware/specs/shackle.json","thumbnail":"unique-icons/shackle.svg","triangles":6016},{"id":"rigging_plate","name":"Rigging Plate","icon":"unique-icons/rigging_plate.svg","model":"Hardware/3d/rigging_plate.glb","spec":"Hardware/specs/rigging_plate.json","thumbnail":"unique-icons/rigging_plate.svg","triangles":1152},{"id":"swivel","name":"Swivel","icon":"unique-icons/swivel.svg","model":"Hardware/3d/swivel.glb","spec":"Hardware/specs/swivel.json","thumbnail":"unique-icons/swivel.svg","triangles":9472}]},{"id":"truss","name":"Truss","assets":[{"id":"truss_1m","name":"Box Truss 1 m","icon":"unique-icons/truss_1m.svg","model":"Truss/3d/truss_1m.glb","spec":"Truss/specs/truss_1m.json","thumbnail":"unique-icons/truss_1m.svg","triangles":896},{"id":"truss_2m","name":"Box Truss 2 m","icon":"unique-icons/truss_2m.svg","model":"Truss/3d/truss_2m.glb","spec":"Truss/specs/truss_2m.json","thumbnail":"unique-icons/truss_2m.svg","triangles":1472},{"id":"truss_3m","name":"Box Truss 3 m","icon":"unique-icons/truss_3m.svg","model":"Truss/3d/truss_3m.glb","spec":"Truss/specs/truss_3m.json","thumbnail":"unique-icons/truss_3m.svg","triangles":2048},{"id":"truss_corner","name":"Box Truss 90\u00b0 Corner","icon":"unique-icons/truss_corner.svg","model":"Truss/3d/truss_corner.glb","spec":"Truss/specs/truss_corner.json","thumbnail":"unique-icons/truss_corner.svg","triangles":1792},{"id":"truss_baseplate","name":"Truss Base Plate","icon":"unique-icons/truss_baseplate.svg","model":"Truss/3d/truss_baseplate.glb","spec":"Truss/specs/truss_baseplate.json","thumbnail":"unique-icons/truss_baseplate.svg","triangles":1036}]},{"id":"scaffold","name":"Scaffold","assets":[{"id":"scaffold_tube_1m","name":"Scaffold Tube 1 m","icon":"unique-icons/scaffold_tube_1m.svg","model":"Scaffold/3d/scaffold_tube_1m.glb","spec":"Scaffold/specs/scaffold_tube_1m.json","thumbnail":"unique-icons/scaffold_tube_1m.svg","triangles":192},{"id":"scaffold_tube_2m","name":"Scaffold Tube 2 m","icon":"unique-icons/scaffold_tube_2m.svg","model":"Scaffold/3d/scaffold_tube_2m.glb","spec":"Scaffold/specs/scaffold_tube_2m.json","thumbnail":"unique-icons/scaffold_tube_2m.svg","triangles":192},{"id":"scaffold_tube_3m","name":"Scaffold Tube 3 m","icon":"unique-icons/scaffold_tube_3m.svg","model":"Scaffold/3d/scaffold_tube_3m.glb","spec":"Scaffold/specs/scaffold_tube_3m.json","thumbnail":"unique-icons/scaffold_tube_3m.svg","triangles":192},{"id":"right_angle_coupler","name":"Right-Angle Coupler","icon":"unique-icons/right_angle_coupler.svg","model":"Scaffold/3d/right_angle_coupler.glb","spec":"Scaffold/specs/right_angle_coupler.json","thumbnail":"unique-icons/right_angle_coupler.svg","triangles":524},{"id":"swivel_coupler","name":"Swivel Coupler","icon":"unique-icons/swivel_coupler.svg","model":"Scaffold/3d/swivel_coupler.glb","spec":"Scaffold/specs/swivel_coupler.json","thumbnail":"unique-icons/swivel_coupler.svg","triangles":524},{"id":"base_jack","name":"Adjustable Base Jack","icon":"unique-icons/base_jack.svg","model":"Scaffold/3d/base_jack.glb","spec":"Scaffold/specs/base_jack.json","thumbnail":"unique-icons/base_jack.svg","triangles":780}]},{"id":"camera","name":"Camera","assets":[{"id":"wirecam","name":"Wirecam Trolley","icon":"unique-icons/wirecam.svg","model":"Camera/3d/wirecam.glb","spec":"Camera/specs/wirecam.json","thumbnail":"unique-icons/wirecam.svg","triangles":1572},{"id":"camera_body","name":"Cinema Camera Body","icon":"unique-icons/camera_body.svg","model":"Camera/3d/camera_body.glb","spec":"Camera/specs/camera_body.json","thumbnail":"unique-icons/camera_body.svg","triangles":280},{"id":"remote_head","name":"Remote Camera Head","icon":"unique-icons/remote_head.svg","model":"Camera/3d/remote_head.glb","spec":"Camera/specs/remote_head.json","thumbnail":"unique-icons/remote_head.svg","triangles":524}]},{"id":"machines","name":"Machines","assets":[{"id":"winch","name":"Stage Winch","icon":"unique-icons/winch.svg","model":"Machines/3d/winch.glb","spec":"Machines/specs/winch.json","thumbnail":"unique-icons/winch.svg","triangles":24112},{"id":"telehandler","name":"Telehandler","icon":"unique-icons/telehandler.svg","model":"Machines/3d/telehandler.glb","spec":"Machines/specs/telehandler.json","thumbnail":"unique-icons/telehandler.svg","triangles":1084},{"id":"telehandler_boom_out","name":"Telehandler \u2014 Boom Extended","icon":"unique-icons/telehandler_boom_out.svg","model":"Machines/3d/telehandler_boom_out.glb","spec":"Machines/specs/telehandler_boom_out.json","thumbnail":"unique-icons/telehandler_boom_out.svg","triangles":1096},{"id":"scissor_lift","name":"Scissor Lift","icon":"unique-icons/scissor_lift.svg","model":"Machines/3d/scissor_lift.glb","spec":"Machines/specs/scissor_lift.json","thumbnail":"unique-icons/scissor_lift.svg","triangles":2072},{"id":"scissor_lift_raised","name":"Scissor Lift \u2014 Raised","icon":"unique-icons/scissor_lift_raised.svg","model":"Machines/3d/scissor_lift_raised.glb","spec":"Machines/specs/scissor_lift_raised.json","thumbnail":"unique-icons/scissor_lift_raised.svg","triangles":2584}]},{"id":"people","name":"People","assets":[{"id":"performer","name":"Performer","icon":"unique-icons/performer.svg","model":"","spec":"","thumbnail":"unique-icons/performer.svg","triangles":0}]}];
+const ASSETS=SIMPLE_RIG_LIBRARY.flatMap(category=>category.assets.map(asset=>({...asset,category:category.name})));
+const q=id=>document.getElementById(id);
+const workspace2d=q('workspace2d'),workspace3d=q('workspace3d'),b2=q('switch2d'),b3=q('switch3d');
+const host=q('sr3Viewport');
+const canvas=document.createElement('canvas');
+canvas.setAttribute('aria-label','SimpleRig 3D planning viewport');
+host.innerHTML='';
+host.appendChild(canvas);
+const ctx=canvas.getContext('2d',{alpha:false});
+
+let objects=[],selected=null,seq=1,showNames=false,currentDrawObject=null;
+let camera={yaw:-0.7,pitch:0.42,distance:12,targetX:0,targetY:1,targetZ:0};
+let drag=null,started=false,tool='select',mode='position',snap=.05;
+const palette={bg:'#07101a',grid:'#26384b',gridMajor:'#40566d',text:'#edf5fc',muted:'#9fb0c0',accent:'#62a7ff',select:'#ffbd59'};
+
+function resize(){
+  const r=host.getBoundingClientRect();
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const w=Math.max(320,Math.floor(r.width)),h=Math.max(420,Math.floor(r.height));
+  canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);
+  canvas.style.width=w+'px';canvas.style.height=h+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);draw();
+}
+function rotatePoint(p){
+  let x=p.x-camera.targetX,y=p.y-camera.targetY,z=p.z-camera.targetZ;
+  const cy=Math.cos(camera.yaw),sy=Math.sin(camera.yaw);
+  const x1=cy*x-sy*z,z1=sy*x+cy*z;
+  const cp=Math.cos(camera.pitch),sp=Math.sin(camera.pitch);
+  const y1=cp*y-sp*z1,z2=sp*y+cp*z1;
+  return {x:x1,y:y1,z:z2+camera.distance};
+}
+function project(p){
+  const r=rotatePoint(p),rect=canvas.getBoundingClientRect();
+  const f=Math.min(rect.width,rect.height)*0.92;
+  const z=Math.max(.25,r.z);
+  return {x:rect.width/2+r.x*f/z,y:rect.height/2-r.y*f/z,z,scale:f/z};
+}
+function line3(a,b,stroke,width=1,dash=[]){
+  const A=project(a),B=project(b);ctx.save();ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.setLineDash(dash);
+  ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.stroke();ctx.restore();
+}
+function drawGrid(){
+  for(let i=-15;i<=15;i++){
+    const major=i%5===0;
+    line3({x:i,y:0,z:-15},{x:i,y:0,z:15},major?palette.gridMajor:palette.grid,major?1.2:.65);
+    line3({x:-15,y:0,z:i},{x:15,y:0,z:i},major?palette.gridMajor:palette.grid,major?1.2:.65);
+  }
+  line3({x:0,y:0,z:0},{x:2,y:0,z:0},'#d74f4f',2);
+  line3({x:0,y:0,z:0},{x:0,y:2,z:0},'#53bb78',2);
+  line3({x:0,y:0,z:0},{x:0,y:0,z:2},'#4c8ee8',2);
+}
+function worldPoint(o,local){
+  let x=local.x*o.scale,y=local.y*o.scale,z=local.z*o.scale;
+  const rx=(o.rx||0)*Math.PI/180,ry=(o.ry||0)*Math.PI/180,rz=(o.rz||0)*Math.PI/180;
+  let c=Math.cos(rx),s=Math.sin(rx),y1=c*y-s*z,z1=s*y+c*z;y=y1;z=z1;
+  c=Math.cos(ry);s=Math.sin(ry);let x1=c*x+s*z;z1=-s*x+c*z;x=x1;z=z1;
+  c=Math.cos(rz);s=Math.sin(rz);x1=c*x-s*y;y1=s*x+c*y;x=x1;y=y1;
+  return{x:o.x+x,y:o.y+y,z:o.z+z}
+}
+function drawPerformer(o){
+  const joints={
+    head:{x:0,y:1.85,z:0},neck:{x:0,y:1.62,z:0},hip:{x:0,y:.92,z:0},
+    ls:{x:-.25,y:1.52,z:0},rs:{x:.25,y:1.52,z:0},lh:{x:-.48,y:.98,z:0},rh:{x:.48,y:.98,z:0},
+    lk:{x:-.13,y:.48,z:0},rk:{x:.13,y:.48,z:0},lf:{x:-.16,y:.03,z:.08},rf:{x:.16,y:.03,z:.08}
+  };
+  const P=k=>project(worldPoint(o,joints[k]));
+  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+  const seg=(a,b,w,c)=>{const A=P(a),B=P(b);ctx.strokeStyle=c;ctx.lineWidth=Math.max(2,w*((A.scale+B.scale)/2)/55);ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.stroke()};
+  seg('neck','hip',18,'#394754');seg('ls','lh',10,'#394754');seg('rs','rh',10,'#394754');
+  seg('hip','lk',12,'#394754');seg('hip','rk',12,'#394754');seg('lk','lf',11,'#29343e');seg('rk','rf',11,'#29343e');
+  seg('ls','rs',8,'#c43e3e');seg('ls','hip',5,'#c43e3e');seg('rs','hip',5,'#c43e3e');
+  const H=P('head');ctx.fillStyle='#c59a7b';ctx.beginPath();ctx.arc(H.x,H.y,Math.max(5,H.scale*.15),0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+function drawBox(o,w=1,h=1,d=1,color='#7f8b96'){
+  const pts=[
+    [-w/2,0,-d/2],[w/2,0,-d/2],[w/2,0,d/2],[-w/2,0,d/2],
+    [-w/2,h,-d/2],[w/2,h,-d/2],[w/2,h,d/2],[-w/2,h,d/2]
+  ].map(v=>project(worldPoint(o,{x:v[0],y:v[1],z:v[2]})));
+  const faces=[[0,1,5,4],[1,2,6,5],[2,3,7,6],[3,0,4,7],[4,5,6,7]];
+  ctx.save();
+  faces.forEach((f,i)=>{ctx.fillStyle=i===4?lighten(color,20):i%2?darken(color,12):color;ctx.strokeStyle='#16202a';ctx.lineWidth=1;ctx.beginPath();f.forEach((n,j)=>j?ctx.lineTo(pts[n].x,pts[n].y):ctx.moveTo(pts[n].x,pts[n].y));ctx.closePath();ctx.fill();ctx.stroke()});
+  ctx.restore();
+}
+function lighten(hex,a){return shade(hex,a)} function darken(hex,a){return shade(hex,-a)}
+function shade(hex,amt){const n=parseInt(hex.slice(1),16),r=Math.max(0,Math.min(255,(n>>16)+amt)),g=Math.max(0,Math.min(255,((n>>8)&255)+amt)),b=Math.max(0,Math.min(255,(n&255)+amt));return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1)}
+function drawPulley(o,double=false){
+  const k=o.kind,c=project({x:o.x,y:o.y+.55*o.scale,z:o.z});
+  const mainR=(k==='rescue_pulley'?.34:k==='progress_capture_pulley'?.29:.25);
+  const r=Math.max(8,c.scale*mainR*o.scale);
+  ctx.save();
+  ctx.fillStyle=k==='rescue_pulley'?'#d3a133':k==='progress_capture_pulley'?'#6d7d89':'#788793';
+  ctx.strokeStyle='#17212b';ctx.lineWidth=3;
+  const wheels=double?[-r*.62,r*.62]:[0];
+  wheels.forEach(dx=>{
+    ctx.beginPath();ctx.arc(c.x+dx,c.y,r,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.strokeStyle='#dce3e8';ctx.lineWidth=Math.max(2,r*.18);ctx.beginPath();ctx.arc(c.x+dx,c.y,r*.58,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='#3a4854';ctx.beginPath();ctx.arc(c.x+dx,c.y,r*.18,0,Math.PI*2);ctx.fill()
+  });
+  if(k==='progress_capture_pulley'){ctx.fillStyle='#c94141';ctx.beginPath();ctx.moveTo(c.x+r*.7,c.y-r*.7);ctx.lineTo(c.x+r*1.3,c.y);ctx.lineTo(c.x+r*.7,c.y+r*.3);ctx.closePath();ctx.fill()}
+  ctx.strokeStyle='#aab5bd';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(c.x-r*.75,c.y-r*.75);ctx.lineTo(c.x-r*.35,c.y-r*1.35);ctx.lineTo(c.x+r*.35,c.y-r*1.35);ctx.lineTo(c.x+r*.75,c.y-r*.75);ctx.stroke();
+  ctx.restore()
+}
+function drawTruss(o){
+  if(o.kind==='truss_baseplate'){drawBoxAt(o,{x:0,y:.05,z:0},.9,.1,.9,'#6f7c86');drawBoxAt(o,{x:0,y:.18,z:0},.34,.28,.34,'#929ca4');return}
+  if(o.kind==='truss_corner'){
+    const a={...o},b={...o,x:o.x+.78*o.scale,z:o.z+.78*o.scale};
+    drawTrussSegment(a,1.5);drawTrussSegment(b,1.5,true);return
+  }
+  const length=o.kind.includes('3m')?3:o.kind.includes('1m')?1:2;drawTrussSegment(o,length)
+}
+function drawTrussSegment(o,length,turn=false){
+  const z=.24,y0=.15,y1=.62;
+  const ends=[-length/2,length/2];
+  ends.forEach(x=>{line3(worldPoint(o,{x:turn?0:x,y:y0,z:turn?x:-z}),worldPoint(o,{x:turn?0:x,y:y1,z:turn?x:-z}),'#aeb7be',4);line3(worldPoint(o,{x:turn?0:x,y:y0,z:turn?x:z}),worldPoint(o,{x:turn?0:x,y:y1,z:turn?x:z}),'#aeb7be',4)});
+  [[y0,-z],[y0,z],[y1,-z],[y1,z]].forEach(([y,zv])=>line3(worldPoint(o,{x:turn?0:-length/2,y,z:turn?-length/2:zv}),worldPoint(o,{x:turn?0:length/2,y,z:turn?length/2:zv}),'#b9c1c7',4));
+  for(let i=-length/2;i<length/2-.1;i+=.34){
+    line3(worldPoint(o,{x:turn?0:i,y:y0,z:turn?i:-z}),worldPoint(o,{x:turn?0:i+.34,y:y1,z:turn?i+.34:z}),'#88959f',1.6);
+    line3(worldPoint(o,{x:turn?0:i,y:y1,z:turn?i:z}),worldPoint(o,{x:turn?0:i+.34,y:y0,z:turn?i+.34:-z}),'#88959f',1.6)
+  }
+}
+function poly3(points,fill,stroke='#17212b',width=1){
+  const pts=points.map(p=>project(worldPoint(currentDrawObject,p)));
+  ctx.save();ctx.fillStyle=fill;ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.beginPath();
+  pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()
+}
+function circle3(o,p,r,fill,stroke='#17212b',width=1){
+  const c=project(worldPoint(o,p));ctx.save();ctx.fillStyle=fill;ctx.strokeStyle=stroke;ctx.lineWidth=width;
+  ctx.beginPath();ctx.ellipse(c.x,c.y,Math.max(2,c.scale*r*o.scale),Math.max(2,c.scale*r*.72*o.scale),0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore()
+}
+function drawTelehandler(o,extended){
+  currentDrawObject=o;
+  // Four large tyres.
+  [[-.72,.28,-.43],[.72,.28,-.43],[-.72,.28,.43],[.72,.28,.43]].forEach(p=>{
+    circle3(o,{x:p[0],y:p[1],z:p[2]},.25,'#171d22','#05080b',2);
+    circle3(o,{x:p[0],y:p[1],z:p[2]},.11,'#8b969e','#26313a',2)
+  });
+  // Lower chassis, counterweight, engine cover.
+  drawBoxAt(o,{x:0,y:.28,z:0},1.8,.28,.86,'#c99722');
+  drawBoxAt(o,{x:-.62,y:.56,z:0},.62,.42,.82,'#d2a32d');
+  // Cab frame and glazing.
+  drawBoxAt(o,{x:.18,y:.58,z:0},.62,.76,.76,'#d5a72e');
+  drawBoxAt(o,{x:.2,y:.75,z:-.395},.48,.47,.025,'#54758a');
+  drawBoxAt(o,{x:.2,y:.75,z:.395},.48,.47,.025,'#54758a');
+  drawBoxAt(o,{x:.49,y:.75,z:0},.025,.47,.62,'#48687c');
+  // Roof and work lights.
+  drawBoxAt(o,{x:.18,y:1.02,z:0},.7,.09,.82,'#ba861b');
+  circle3(o,{x:.45,y:1.08,z:-.27},.05,'#f0e1a2');
+  circle3(o,{x:.45,y:1.08,z:.27},.05,'#f0e1a2');
+  // Boom sections and hydraulic ram.
+  const boomLen=extended?2.65:1.52, boomX=extended?1.03:.55;
+  drawRotatedBox(o,{x:boomX,y:1.13,z:0},boomLen,.22,.3,'#d8a526',-0.28);
+  drawRotatedBox(o,{x:extended?1.65:.91,y:1.35,z:0},extended?1.45:.48,.12,.2,'#e0b641',-0.28);
+  drawRotatedBox(o,{x:.66,y:.91,z:.29},1.18,.055,.055,'#6b7379',-0.28);
+  // Fork carriage and forks.
+  const fx=extended?2.55:1.36, fy=extended?1.62:1.28;
+  drawBoxAt(o,{x:fx,y:fy,z:0},.13,.52,.72,'#303b44');
+  drawRotatedBox(o,{x:fx+.42,y:fy-.18,z:-.24},.85,.055,.08,'#363f46',-.08);
+  drawRotatedBox(o,{x:fx+.42,y:fy-.18,z:.24},.85,.055,.08,'#363f46',-.08);
+}
+function drawScissorLift(o,raised){
+  // Base and wheels.
+  drawBoxAt(o,{x:0,y:.18,z:0},1.55,.3,.82,'#2e3942');
+  [[-.55,.1,-.45],[.55,.1,-.45],[-.55,.1,.45],[.55,.1,.45]].forEach(p=>circle3(o,{x:p[0],y:p[1],z:p[2]},.13,'#171d22'));
+  const levels=raised?4:2, total=raised?2.35:1.05;
+  for(let i=0;i<levels;i++){
+    const y=.35+i*(total/levels);
+    line3(worldPoint(o,{x:-.55,y,z:-.26}),worldPoint(o,{x:.55,y:y+total/levels,z:.26}),'#d2a027',6);
+    line3(worldPoint(o,{x:.55,y,z:-.26}),worldPoint(o,{x:-.55,y:y+total/levels,z:.26}),'#d2a027',6)
+  }
+  drawBoxAt(o,{x:0,y:.42+total,z:0},1.45,.12,.82,'#d4a32d');
+  const railY=.58+total;
+  [[-0.67,-.35],[.67,-.35],[-.67,.35],[.67,.35]].forEach(p=>line3(worldPoint(o,{x:p[0],y:.48+total,z:p[1]}),worldPoint(o,{x:p[0],y:railY+.52,z:p[1]}),'#d6aa3c',3));
+  line3(worldPoint(o,{x:-.67,y:railY+.52,z:-.35}),worldPoint(o,{x:.67,y:railY+.52,z:-.35}),'#d6aa3c',3);
+  line3(worldPoint(o,{x:-.67,y:railY+.52,z:.35}),worldPoint(o,{x:.67,y:railY+.52,z:.35}),'#d6aa3c',3)
+}
+function drawWinch(o){
+  drawBoxAt(o,{x:0,y:.28,z:0},1.28,.56,.72,'#36434e');
+  drawBoxAt(o,{x:-.47,y:.64,z:0},.28,.42,.58,'#485762');
+  circle3(o,{x:.15,y:.64,z:-.38},.34,'#758591','#17212b',2);
+  circle3(o,{x:.15,y:.64,z:.38},.34,'#758591','#17212b',2);
+  circle3(o,{x:.15,y:.64,z:-.39},.19,'#242e36');
+  line3(worldPoint(o,{x:.48,y:.64,z:0}),worldPoint(o,{x:1.05,y:.64,z:0}),'#d8dce0',3)
+}
+function drawHardware(o){
+  const k=o.kind;
+  if(k==='carabiner'){
+    const c=project({x:o.x,y:o.y+.6*o.scale,z:o.z});ctx.save();ctx.strokeStyle='#a8b2ba';ctx.lineWidth=Math.max(5,c.scale*.11*o.scale);
+    ctx.beginPath();ctx.ellipse(c.x,c.y,c.scale*.24*o.scale,c.scale*.38*o.scale,.28,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='#d8a33b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(c.x-8,c.y-18);ctx.lineTo(c.x+12,c.y+12);ctx.stroke();ctx.restore();return
+  }
+  if(k==='shackle'){drawPulley(o,false);drawBoxAt(o,{x:0,y:.18,z:0},.62,.1,.18,'#7b8994');return}
+  if(k==='bollard'){drawBoxAt(o,{x:0,y:.15,z:0},.74,.18,.58,'#657480');drawCylinderApprox(o,{x:0,y:.58,z:0},.28,.72,'#85939e');return}
+  if(k==='rigging_plate'){drawBoxAt(o,{x:0,y:.3,z:0},.72,.08,.52,'#657581');[[-.22,.32,-.14],[.22,.32,-.14],[0,.32,.14]].forEach(p=>circle3(o,{x:p[0],y:p[1],z:p[2]},.07,'#07101a'));return}
+  if(k==='swivel'){drawCylinderApprox(o,{x:0,y:.52,z:0},.22,.46,'#778691');circle3(o,{x:0,y:.82,z:0},.13,'#9ba5ad');circle3(o,{x:0,y:.2,z:0},.13,'#9ba5ad');return}
+  drawBoxAt(o,{x:0,y:.25,z:0},.52,.7,.32,k==='clutch'||k==='descender'?'#b94b43':'#788893');
+  circle3(o,{x:0,y:.55,z:-.18},.13,'#dce2e6')
+}
+function drawCameraAsset(o){
+  if(o.kind==='wirecam'){
+    circle3(o,{x:-.35,y:.92,z:0},.14,'#788893');circle3(o,{x:.35,y:.92,z:0},.14,'#788893');
+    line3(worldPoint(o,{x:-.35,y:.78,z:0}),worldPoint(o,{x:-.18,y:.43,z:0}),'#687783',4);
+    line3(worldPoint(o,{x:.35,y:.78,z:0}),worldPoint(o,{x:.18,y:.43,z:0}),'#687783',4);
+    drawBoxAt(o,{x:0,y:.34,z:0},.58,.34,.42,'#29343e');circle3(o,{x:.3,y:.5,z:0},.11,'#6f98b8');return
+  }
+  if(o.kind==='remote_head'){drawBoxAt(o,{x:0,y:.25,z:0},.72,.12,.58,'#303b45');drawCylinderApprox(o,{x:0,y:.55,z:0},.12,.48,'#5d6d79');drawBoxAt(o,{x:0,y:.83,z:0},.66,.36,.45,'#29343e');circle3(o,{x:.34,y:.98,z:0},.12,'#769bb9');return}
+  drawBoxAt(o,{x:0,y:.42,z:0},.74,.58,.48,'#2b3540');circle3(o,{x:.39,y:.7,z:0},.19,'#182028');circle3(o,{x:.4,y:.7,z:0},.1,'#7697b4')
+}
+function drawBoxAt(o,c,w,h,d,color){
+  const temp={...o,x:o.x+c.x*o.scale,y:o.y+c.y*o.scale,z:o.z+c.z*o.scale};
+  drawBox(temp,w*o.scale,h*o.scale,d*o.scale,color)
+}
+function drawRotatedBox(o,c,w,h,d,color,angle){
+  // Canvas renderer approximation: detailed articulated component with centreline.
+  const a=worldPoint(o,{x:c.x-w/2*Math.cos(angle),y:c.y-w/2*Math.sin(angle),z:c.z});
+  const b=worldPoint(o,{x:c.x+w/2*Math.cos(angle),y:c.y+w/2*Math.sin(angle),z:c.z});
+  const A=project(a),B=project(b);ctx.save();ctx.strokeStyle=color;ctx.lineWidth=Math.max(3,((A.scale+B.scale)/2)*h*o.scale);ctx.lineCap='square';ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.stroke();ctx.strokeStyle='#17212b';ctx.lineWidth=1;ctx.stroke();ctx.restore()
+}
+function drawCylinderApprox(o,c,r,h,color){
+  drawBoxAt(o,c,r*2,h,r*2,color);circle3(o,{x:c.x,y:c.y+h/2,z:c.z},r,color)
+}
+function drawMachine(o){
+  if(o.kind==='telehandler')return drawTelehandler(o,false);
+  if(o.kind==='telehandler_boom_out')return drawTelehandler(o,true);
+  if(o.kind==='scissor_lift')return drawScissorLift(o,false);
+  if(o.kind==='scissor_lift_raised')return drawScissorLift(o,true);
+  if(o.kind==='winch')return drawWinch(o)
+}
+function drawObject(o){
+  if(o.hidden)return;
+  currentDrawObject=o;
+  if(o.kind==='performer')drawPerformer(o);
+  else if(o.category==='Pulleys')drawPulley(o,o.kind==='double_pulley');
+  else if(o.category==='Hardware')drawHardware(o);
+  else if(o.category==='Truss')drawTruss(o);
+  else if(o.category==='Machines')drawMachine(o);
+  else if(o.category==='Camera')drawCameraAsset(o);
+  else if(o.category==='Scaffold'){
+    if(o.kind==='base_jack'){drawBoxAt(o,{x:0,y:.06,z:0},.7,.12,.7,'#7c8993');drawCylinderApprox(o,{x:0,y:.55,z:0},.07,1,'#919ba3')}
+    else if(o.kind.includes('coupler')){drawCylinderApprox(o,{x:0,y:.48,z:0},.19,.36,'#7a8791');drawRotatedBox(o,{x:0,y:.5,z:0},1,.13,.13,'#929ca4',o.kind==='swivel_coupler'?.55:0)}
+    else drawRotatedBox(o,{x:0,y:.5,z:0},o.kind.includes('3m')?3:o.kind.includes('1m')?1:2,.12,.12,'#929ca4',0)
+  }
+  else drawBox(o,.55,.55,.28,'#6f7e8b');
+  const centre=project({x:o.x,y:o.y+1.05*o.scale,z:o.z});
+  if(o.simActive){
+    const p1=project({x:o.x,y:o.y+1.3*o.scale,z:o.z}),p2=project({x:o.x,y:o.y+2.2*o.scale,z:o.z});
+    ctx.save();ctx.strokeStyle='#ef4444';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();ctx.fillStyle='#ef4444';ctx.beginPath();ctx.arc(p2.x,p2.y,7,0,Math.PI*2);ctx.fill();ctx.font='700 11px Arial';ctx.textAlign='center';ctx.fillText((o.simForceKn||0).toFixed(2)+' kN',p2.x,p2.y-10);ctx.restore()
+  }
+  if(o.operating){
+    ctx.save();ctx.strokeStyle='#f2a540';ctx.lineWidth=4;ctx.setLineDash([9,5]);ctx.strokeRect(centre.x-52,centre.y-72,104,95);
+    ctx.setLineDash([]);ctx.fillStyle='#f2a540';ctx.font='700 11px Arial';ctx.textAlign='center';ctx.fillText('OPERATING',centre.x,centre.y-78);ctx.restore()
+  }
+  if(o===selected){ctx.save();ctx.strokeStyle=palette.select;ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.strokeRect(centre.x-45,centre.y-65,90,82);ctx.restore()}
+  if(showNames){ctx.font='700 13px Arial';ctx.textAlign='center';ctx.textBaseline='bottom';const txt=o.name;const w=ctx.measureText(txt).width+14;ctx.fillStyle='rgba(5,12,20,.84)';ctx.fillRect(centre.x-w/2,centre.y-77,w,21);ctx.fillStyle='#fff';ctx.fillText(txt,centre.x,centre.y-61)}
+}
+function draw(){
+  const r=canvas.getBoundingClientRect();ctx.fillStyle=palette.bg;ctx.fillRect(0,0,r.width,r.height);drawGrid();
+  [...objects].sort((a,b)=>rotatePoint(b).z-rotatePoint(a).z).forEach(drawObject);
+  ctx.fillStyle=palette.muted;ctx.font='12px Arial';ctx.textAlign='left';ctx.fillText('Drag empty space to orbit • Drag an object to move • Wheel to zoom',14,r.height-14);
+}
+function add(kind){
+  const asset=ASSETS.find(a=>a.id===kind)||ASSETS.find(a=>a.id==='performer');
+  const o={id:'3D-'+seq++,kind:asset.id,name:asset.name+' '+seq,category:asset.category,x:0,y:0,z:0,rx:0,ry:0,rz:0,scale:1,hidden:false,locked:false,model:asset.name,wll:'—',mbs:'—',operating:false,operatingRole:'auto',supportingParts:1,pullDirection:'haul'};
+  if(objects.length){o.x=((objects.length%5)-2)*1.2;o.z=Math.floor(objects.length/5)*1.1}
+  objects.push(o);select(o);renderLayers();draw();q('sr3EnvStatus').textContent='Added '+asset.name+'.';return o
+}
+function select(o){selected=o;syncUI();renderLayers();draw()}
+
+function inferOperatingRole(o){
+  if(!o)return 'other';
+  if(o.operatingRole&&o.operatingRole!=='auto')return o.operatingRole;
+  const k=(o.kind||'').toLowerCase(),c=(o.category||'').toLowerCase();
+  if(k.includes('winch'))return 'winch';
+  if(k.includes('performer'))return 'load';
+  if(k.includes('bollard')||k.includes('shackle')||k.includes('rigging_plate'))return 'anchor';
+  if(k.includes('double_pulley')||k.includes('progress_capture'))return 'movingPulley';
+  if(k.includes('pulley'))return 'fixedPulley';
+  if(c==='machines')return 'winch';
+  return 'other'
+}
+function suggestedSupportingParts(o,role){
+  if(!o)return 1;
+  const k=(o.kind||'').toLowerCase();
+  if(role==='movingPulley'){
+    if(k.includes('double'))return 3;
+    if(k.includes('progress_capture'))return 2;
+    return 2
+  }
+  if(role==='haul'||role==='winch')return Math.max(1,Number(q('sr3Ratio')?.value)||1);
+  if(role==='fixedPulley')return 1;
+  if(role==='load')return Math.max(1,Number(q('sr3Ratio')?.value)||1);
+  return Math.max(.1,Number(o.supportingParts)||1)
+}
+function analyseOperatingPoint(){
+  const box=q('sr3OperatingAnalysis'),klass=q('sr3OperatingClass'),ratioEl=q('sr3EffectiveRatio'),pullEl=q('sr3OperatingPull'),travelEl=q('sr3LoadTravel'),effectEl=q('sr3ForceEffect'),message=q('sr3OperatingMessage');
+  if(!selected){
+    box.className='operating-analysis neutral';klass.textContent='Select an object';ratioEl.textContent=pullEl.textContent=travelEl.textContent=effectEl.textContent='—';message.textContent='Mark one object as operating to analyse what happens when force is applied there.';return
+  }
+  const role=inferOperatingRole(selected);
+  const direction=selected.pullDirection||'haul';
+  let parts=Math.max(.1,Number(selected.supportingParts)||suggestedSupportingParts(selected,role));
+  const systemRatio=Math.max(.1,Number(q('sr3Ratio')?.value)||1);
+  const efficiency=Math.max(.01,Math.min(1,(Number(q('sr3Efficiency')?.value)||100)/100));
+  const load=Math.max(0,Number(q('sr3Load')?.value)||0);
+  let effective=1,valid=true,warning='';
+  if(role==='haul'||role==='winch')effective=systemRatio;
+  else if(role==='movingPulley'||role==='load')effective=parts;
+  else if(role==='fixedPulley')effective=1;
+  else if(role==='anchor'){effective=0;valid=false;warning='This is an anchor or tie-off. Pulling it is treated as disturbing the support, not as a valid operating input.'}
+  else effective=parts;
+  if(direction==='moveObject'&&effective>0)effective=1/effective;
+  const practical=effective*efficiency;
+  let classification='Neutral / direction change',cls='neutral';
+  if(!valid){classification='Invalid operating point';cls='disadvantage'}
+  else if(practical>1.05){classification='Mechanical advantage';cls='advantage'}
+  else if(practical<.95){classification='Mechanical disadvantage';cls='disadvantage'}
+  box.className='operating-analysis '+cls;
+  klass.textContent=classification;
+  ratioEl.textContent=valid?`${effective.toFixed(2)} : 1`:'—';
+  pullEl.textContent=valid&&practical>0?`${(load/practical).toFixed(1)} kgf`:'—';
+  travelEl.textContent=valid&&effective>0?`${(1/effective).toFixed(2)} m`:'—';
+  effectEl.textContent=!valid?'Support disturbed':effective>1?`${effective.toFixed(2)}× force multiplication`:effective<1?`${(1/effective).toFixed(2)}× more input force`:'No force multiplication';
+  if(!warning){
+    const action=direction==='moveObject'?'moving the selected object':'pulling the line at the selected object';
+    warning=`Analysis assumes ${parts.toFixed(1)} supporting rope part${parts===1?'':'s'} and ${Math.round(efficiency*100)}% efficiency. When ${action}, the estimated result is ${classification.toLowerCase()}.`;
+    if(role==='fixedPulley')warning+=' A fixed pulley normally changes direction only.';
+  }
+  message.textContent=warning;
+}
+function setOperatingObject(o,isOperating){
+  if(isOperating)objects.forEach(other=>{if(other!==o)other.operating=false});
+  if(o)o.operating=!!isOperating;
+  renderLayers();analyseOperatingPoint();draw()
+}
+
+function syncUI(){
+  const ids=['sr3Name','sr3PX','sr3PY','sr3PZ','sr3Model','sr3Wll','sr3Mbs'];
+  if(!selected){ids.forEach(id=>q(id).value='');q('sr3Operating').checked=false;analyseOperatingPoint();return}
+  q('sr3Name').value=selected.name;q('sr3PX').value=selected.x.toFixed(2);q('sr3PY').value=selected.y.toFixed(2);q('sr3PZ').value=selected.z.toFixed(2);q('sr3Model').value=selected.model;q('sr3Wll').value=selected.wll;q('sr3Mbs').value=selected.mbs;
+  q('sr3Operating').checked=!!selected.operating;
+  q('sr3OperatingRole').value=selected.operatingRole||'auto';
+  const inferred=inferOperatingRole(selected);
+  if(!selected.supportingParts||selected.supportingParts===1)selected.supportingParts=suggestedSupportingParts(selected,inferred);
+  q('sr3SupportingParts').value=selected.supportingParts;
+  q('sr3PullDirection').value=selected.pullDirection||'haul';
+  syncSliders();analyseOperatingPoint()
+}
+function syncSliders(){
+  if(!selected)return;
+  let vals,labs,ranges;
+  if(mode==='position'){vals=[selected.x,selected.y,selected.z];labs=['X position (m)','Y position (m)','Z position (m)'];ranges=[[-10,10,.05],[0,10,.05],[-10,10,.05]]}
+  else if(mode==='rotation'){vals=[selected.rx,selected.ry,selected.rz];labs=['X rotation (°)','Y rotation (°)','Z rotation (°)'];ranges=[[-180,180,1],[-180,180,1],[-180,180,1]]}
+  else{vals=[selected.scale,selected.scale,selected.scale];labs=['Uniform scale','Uniform scale','Uniform scale'];ranges=[[.1,5,.05],[.1,5,.05],[.1,5,.05]]}
+  ['X','Y','Z'].forEach((k,i)=>{const s=q('sr3'+k);s.min=ranges[i][0];s.max=ranges[i][1];s.step=ranges[i][2];s.value=vals[i];q('sr3Out'+k).value=Number(vals[i]).toFixed(mode==='rotation'?0:2);q('sr3Label'+k).textContent=labs[i]})
+}
+
+function renderLayers(){
+  const host=q('sr3LayersList');if(!host)return;host.innerHTML='';
+  [...objects].reverse().forEach(o=>{
+    const row=document.createElement('div');row.className='layer-row'+(o===selected?' active':'');
+    const eye=document.createElement('button');eye.type='button';eye.textContent=o.hidden?'○':'◉';
+    eye.addEventListener('click',e=>{e.stopPropagation();o.hidden=!o.hidden;renderLayers();draw()});
+    const lock=document.createElement('button');lock.type='button';lock.textContent=o.locked?'🔒':'🔓';
+    lock.addEventListener('click',e=>{e.stopPropagation();o.locked=!o.locked;renderLayers()});
+    const name=document.createElement('div');name.className='layer-name';name.innerHTML=o.name+(o.operating?'<span class="operating-layer-badge">OPERATING</span>':'');name.addEventListener('click',()=>select(o));
+    const up=document.createElement('button');up.type='button';up.textContent='↑';
+    up.addEventListener('click',e=>{e.stopPropagation();const i=objects.indexOf(o);if(i<objects.length-1){objects.splice(i,1);objects.splice(i+1,0,o);renderLayers();draw()}});
+    const down=document.createElement('button');down.type='button';down.textContent='↓';
+    down.addEventListener('click',e=>{e.stopPropagation();const i=objects.indexOf(o);if(i>0){objects.splice(i,1);objects.splice(i-1,0,o);renderLayers();draw()}});
+    row.append(eye,lock,name,up,down);host.appendChild(row)
+  })
+}
+
+function renderLibrary(filter=''){
+  const box=q('sr3Equipment');box.innerHTML='';const term=filter.trim().toLowerCase();
+  SIMPLE_RIG_LIBRARY.forEach((category,index)=>{
+    const items=category.assets.filter(a=>!term||a.name.toLowerCase().includes(term)||category.name.toLowerCase().includes(term));
+    if(!items.length)return;
+    const details=document.createElement('details');details.className='sr3-folder';details.open=index<2||category.id==='people'||!!term;
+    const summary=document.createElement('summary');summary.innerHTML=`<span>${category.name}</span><small>${items.length}</small>`;
+    const grid=document.createElement('div');grid.className='sr3-folder-grid';
+    items.forEach(a=>{const b=document.createElement('button');b.type='button';b.className='sr3-library-item';b.innerHTML=`<img src="${a.icon}" alt=""><span>${a.name}</span>`;b.addEventListener('click',()=>add(a.id));grid.appendChild(b)});
+    details.append(summary,grid);box.appendChild(details)
+  })
+}
+function hitObject(x,y){
+  let best=null,bestD=54;
+  objects.forEach(o=>{if(o.hidden)return;const p=project({x:o.x,y:o.y+.9*o.scale,z:o.z});const d=Math.hypot(x-p.x,y-p.y);if(d<bestD){best=o;bestD=d}});
+  return best
+}
+function pointerPos(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+canvas.addEventListener('pointerdown',e=>{const p=pointerPos(e),hit=hitObject(p.x,p.y);drag={x:p.x,y:p.y,yaw:camera.yaw,pitch:camera.pitch,object:hit,startX:hit?.x,startY:hit?.y,startZ:hit?.z,startRX:hit?.rx||0,startRY:hit?.ry||0,startScale:hit?.scale||1,objectStarts:objects.map(o=>({o,x:o.x,y:o.y,z:o.z}))};if(hit)select(hit);canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener('pointermove',e=>{
+  if(!drag)return;const p=pointerPos(e),dx=p.x-drag.x,dy=p.y-drag.y;
+  if(drag.object&&!drag.object.locked){
+    if(tool==='rotate'){drag.object.ry=drag.startRY+dx*.8;drag.object.rx=drag.startRX-dy*.55}
+    else if(tool==='scale'){drag.object.scale=Math.max(.1,drag.startScale+(dx-dy)*.008)}
+    else{
+      drag.object.x=drag.startX+dx*.018;drag.object.z=drag.startZ+dy*.018;
+      if(window.SimpleRigLive?.isLive()){
+        const role=inferOperatingRole(drag.object);
+        const parts=Math.max(1,Number(drag.object.supportingParts)||suggestedSupportingParts(drag.object,role));
+        if(role==='movingPulley'||(drag.object.kind||'').toLowerCase().includes('pulley')){
+          const deltaX=drag.object.x-drag.startX,deltaZ=drag.object.z-drag.startZ;
+          drag.objectStarts.forEach(start=>{
+            if(start.o===drag.object)return;
+            const linkedRole=inferOperatingRole(start.o);
+            if(linkedRole==='load'){
+              start.o.x=start.x-deltaX/parts;
+              start.o.z=start.z-deltaZ/parts;
+            }else if(linkedRole==='movingPulley'){
+              start.o.x=start.x-deltaX/(parts*2);
+              start.o.z=start.z-deltaZ/(parts*2);
+            }
+          });
+          q('sr3EnvStatus').textContent='LIVE: pulley movement is propagating through the connected-system preview.';
+        }
+      }
+    }
+    syncUI();renderLayers()
+  }else{camera.yaw=drag.yaw-dx*.007;camera.pitch=Math.max(-1.25,Math.min(1.25,drag.pitch-dy*.006))}
+  draw()
+});
+canvas.addEventListener('pointerup',()=>drag=null);
+canvas.addEventListener('wheel',e=>{e.preventDefault();camera.distance=Math.max(4,Math.min(35,camera.distance+e.deltaY*.012));draw()},{passive:false});
+
+function init(){
+  if(started)return;started=true;renderLibrary();bind();add('performer');objects[0].name='Performer';select(objects[0]);q('sr3EnvStatus').textContent='3D workspace ready — performer added automatically.';resize()
+}
+function showMode(modeName){
+  const is3=modeName==='3d';workspace2d.classList.toggle('hidden-workspace',is3);workspace3d.classList.toggle('active',is3);b2.classList.toggle('active',!is3);b3.classList.toggle('active',is3);
+  if(is3)requestAnimationFrame(()=>{init();resize()})
+}
+function bind(){
+  q('sr3LibrarySearch').addEventListener('input',e=>renderLibrary(e.target.value));
+
+  q('sr3Operating').addEventListener('change',e=>{if(selected)setOperatingObject(selected,e.target.checked)});
+  q('sr3OperatingRole').addEventListener('change',e=>{if(!selected)return;selected.operatingRole=e.target.value;selected.supportingParts=suggestedSupportingParts(selected,inferOperatingRole(selected));q('sr3SupportingParts').value=selected.supportingParts;analyseOperatingPoint();renderLayers();draw()});
+  q('sr3SupportingParts').addEventListener('input',e=>{if(!selected)return;selected.supportingParts=Math.max(.1,Number(e.target.value)||1);analyseOperatingPoint();draw()});
+  q('sr3PullDirection').addEventListener('change',e=>{if(!selected)return;selected.pullDirection=e.target.value;analyseOperatingPoint();draw()});
+
+  q('show3dNames').addEventListener('change',e=>{showNames=e.target.checked;draw()});
+  document.querySelectorAll('[data-sr3-tool]').forEach(b=>b.addEventListener('click',()=>{tool=b.dataset.sr3Tool;mode=tool==='rotate'?'rotation':tool==='scale'?'scale':'position';document.querySelectorAll('[data-sr3-tool]').forEach(x=>x.classList.toggle('active',x===b));syncSliders()}));
+  document.querySelectorAll('[data-sr3-mode]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.sr3Mode;document.querySelectorAll('[data-sr3-mode]').forEach(x=>x.classList.toggle('active',x===b));syncSliders()}));
+  document.querySelectorAll('[data-sr3-snap]').forEach(b=>b.addEventListener('click',()=>{snap=Number(b.dataset.sr3Snap);document.querySelectorAll('[data-sr3-snap]').forEach(x=>x.classList.toggle('active',x===b))}));
+  ['X','Y','Z'].forEach((k,i)=>q('sr3'+k).addEventListener('input',e=>{if(!selected||selected.locked)return;let v=Number(e.target.value);if(snap)v=Math.round(v/snap)*snap;if(mode==='position')selected[['x','y','z'][i]]=v;else if(mode==='rotation')selected[['rx','ry','rz'][i]]=v;else selected.scale=v;syncUI();draw()}));
+  q('sr3Duplicate').addEventListener('click',()=>{if(!selected)return;const old=selected,n=add(old.kind);Object.assign(n,{x:old.x+.4,y:old.y,z:old.z+.4,scale:old.scale,name:old.name+' copy'});select(n)});
+  q('sr3Delete').addEventListener('click',()=>{if(!selected)return;objects=objects.filter(o=>o!==selected);select(null);renderLayers()});
+  q('sr3Hide').addEventListener('click',()=>{if(selected){selected.hidden=!selected.hidden;renderLayers();draw()}});
+  q('sr3Lock').addEventListener('click',()=>{if(selected){selected.locked=!selected.locked;renderLayers()}});
+  document.querySelectorAll('[data-sr3-view]').forEach(b=>b.addEventListener('click',()=>{const v=b.dataset.sr3View;if(v==='top'){camera.yaw=0;camera.pitch=1.25}else if(v==='front'){camera.yaw=0;camera.pitch=0}else if(v==='right'){camera.yaw=-Math.PI/2;camera.pitch=0}else{camera.yaw=-.7;camera.pitch=.42}draw()}));
+  ['sr3Name','sr3Model','sr3Wll','sr3Mbs'].forEach(id=>q(id).addEventListener('input',e=>{if(!selected)return;const key={sr3Name:'name',sr3Model:'model',sr3Wll:'wll',sr3Mbs:'mbs'}[id];selected[key]=e.target.value;renderLayers();draw()}));
+  ['sr3PX','sr3PY','sr3PZ'].forEach((id,i)=>q(id).addEventListener('input',e=>{if(!selected||selected.locked)return;selected[['x','y','z'][i]]=Number(e.target.value)||0;syncSliders();draw()}));
+  ['sr3Load','sr3Ratio','sr3Efficiency'].forEach(id=>q(id).addEventListener('input',()=>{const l=Number(q('sr3Load').value)||0,r=Math.max(1,Number(q('sr3Ratio').value)||1),ef=Math.max(1,Number(q('sr3Efficiency').value)||100)/100;q('sr3Pull').textContent=(l/(r*ef)).toFixed(1)+' kg';analyseOperatingPoint()}));
+  q('sr3Scan').addEventListener('click',()=>q('sr3ScanDialog').showModal());
+  q('sr3CloseScan').addEventListener('click',()=>q('sr3ScanDialog').close());
+  q('sr3EnvironmentFile').addEventListener('change',e=>{q('sr3EnvStatus').textContent=e.target.files[0]?'Environment file selected. Preview import is not available in standalone mode.':'No environment loaded.'});
+  q('sr3EnvHide').addEventListener('click',()=>{});
+  q('sr3EnvGround').addEventListener('click',()=>{});q('sr3AddGroup')?.addEventListener('click',()=>q('sr3EnvStatus').textContent='Layer groups can be added in the next pass.');
+}
+b2.addEventListener('click',()=>showMode('2d'));b3.addEventListener('click',()=>showMode('3d'));
+window.addEventListener('resize',()=>{if(workspace3d.classList.contains('active'))resize()},{passive:true});
+
+window.SimpleRig3D={
+  captureDataURL(){draw();return canvas.toDataURL('image/jpeg',.94)},
+  getState(){return {objects:JSON.parse(JSON.stringify(objects)),camera:{...camera},showNames}},
+
+  getOperating(){return objects.find(o=>o.operating)||null},
+  simulate(forceKn,duration){
+    const op=objects.find(o=>o.operating);
+    if(!op)return {ok:false,message:'No 3D operating point is marked.'};
+    const role=inferOperatingRole(op);
+    const parts=Math.max(.1,Number(op.supportingParts)||suggestedSupportingParts(op,role));
+    const ratio=Math.max(.1,Number(q('sr3Ratio').value)||1);
+    const efficiency=Math.max(.01,(Number(q('sr3Efficiency').value)||100)/100);
+    const effective=(role==='fixedPulley'||role==='anchor')?1:(role==='haul'||role==='winch'?ratio:parts);
+    const forceN=forceKn*1000;
+    const outputN=forceN*effective*efficiency;
+    const loadKg=Math.max(.1,Number(q('sr3Load').value)||100);
+    const loadN=loadKg*9.80665;
+    const acceleration=(outputN-loadN)/loadKg;
+    const distance=Math.max(-3,Math.min(3,.5*acceleration*duration*duration));
+    const moving=objects.filter(o=>inferOperatingRole(o)==='load'||inferOperatingRole(o)==='movingPulley'||o===op);
+    moving.forEach(o=>{o.y=Math.max(0,o.y+distance)});
+    op.simForceKn=forceKn;op.simActive=true;
+    syncUI();renderLayers();draw();
+    return {ok:true,effective,outputN,loadN,acceleration,distance,affected:moving.map(o=>o.name),message:`${forceKn.toFixed(2)} kN applied. Estimated output ${(outputN/1000).toFixed(2)} kN; movement ${Math.abs(distance).toFixed(2)} m preview.`}
+  },
+
+  setState(state){
+    if(!state)return;
+    objects=Array.isArray(state.objects)?JSON.parse(JSON.stringify(state.objects)):[];objects.forEach(o=>{if(o.operating===undefined)o.operating=false;if(!o.operatingRole)o.operatingRole='auto';if(!o.supportingParts)o.supportingParts=1;if(!o.pullDirection)o.pullDirection='haul'});
+    camera={...camera,...(state.camera||{})};
+    showNames=!!state.showNames;
+    const toggle=q('show3dNames');if(toggle)toggle.checked=showNames;
+    selected=objects[0]||null;seq=Math.max(1,...objects.map(o=>Number(String(o.id||'').replace(/\D/g,''))||0))+1;
+    syncUI();renderLayers();draw();
+  },
+  isActive(){return workspace3d.classList.contains('active')},
+  ensureReady(){init();resize();draw()},
+  draw
+};
+
+})();
+</script>
+
+<div id="projectPanel" class="project-panel" aria-hidden="true">
+  <div class="project-header">
+    <h2>Projects & Timeline</h2>
+    <span id="projectStatus" class="project-status">Projects are stored in this browser until exported.</span>
+    <span class="spacer"></span>
+    <button id="exportProjectBtn" type="button">Export project</button>
+    <label class="button" style="cursor:pointer">Import project<input id="importProjectFile" type="file" accept=".simplerig,.json" hidden></label>
+    <button id="closeProjectsBtn" type="button">Close</button>
+  </div>
+  <div class="project-body">
+    <aside class="project-sidebar">
+      <div class="project-controls">
+        <input id="newProjectName" type="text" placeholder="New project name">
+        <button id="createProjectBtn" class="primary" type="button">Create project</button>
+      </div>
+      <div id="projectList" class="project-list"></div>
+    </aside>
+    <main class="project-main">
+      <div class="timeline-toolbar">
+        <input id="timelineFileName" type="text" placeholder="Plan/file name">
+        <select id="timelineWorkspace">
+          <option value="current">Current workspace</option>
+          <option value="2d">2D workspace</option>
+          <option value="3d">3D workspace</option><option value="harness">Harness reference</option>
+        </select>
+        <button id="saveToProjectBtn" class="primary" type="button">Save current plan</button>
+        <button id="overwriteProjectFileBtn" type="button">Overwrite selected</button>
+        <button id="deleteProjectFileBtn" type="button">Delete selected</button>
+      </div>
+      <div id="projectTimeline" class="timeline">
+        <div class="timeline-line"></div>
+        <div id="timelineItems"></div>
+        <div id="timelineEmpty" class="timeline-empty">Create or select a project, then save the current plan into its timeline.</div>
+      </div>
+    </main>
+  </div>
+</div>
+
+
+
+<script id="harnessReferenceSystem">
+(()=>{
+'use strict';
+const q=id=>document.getElementById(id),svg=q('harnessSvg'),items=q('harnessItems');
+let selected=null,drag=null,seq=1;
+function showHarness(){q('workspace2d').classList.add('hidden-workspace');q('workspace3d').classList.remove('active');q('workspaceHarness').classList.add('active');q('switch2d').classList.remove('active');q('switch3d').classList.remove('active');q('switchHarness').classList.add('active')}
+function leaveHarness(){q('workspaceHarness').classList.remove('active');q('switchHarness').classList.remove('active')}
+q('switchHarness').addEventListener('click',showHarness);q('switch2d').addEventListener('click',leaveHarness);q('switch3d').addEventListener('click',leaveHarness);
+document.querySelectorAll('input[name="harnessSex"]').forEach(r=>r.addEventListener('change',()=>{q('maleFigure').style.display=r.value==='male'&&r.checked?'':'none';q('femaleFigure').style.display=r.value==='female'&&r.checked?'':'none'}));
+[['hFullBody','fullBodyHarness'],['hLegCuffs','legCuffs'],['hAnkleCuffs','ankleCuffs'],['hLastResort','lastResortHarness'],['hMartialArts','martialArtsHarness']].forEach(([i,l])=>q(i).addEventListener('change',()=>q(l).style.display=q(i).checked?'':'none'));
+function point(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
+function bind(g){g.classList.add('harness-item');g.addEventListener('pointerdown',e=>{selected=g;const p=point(e),m=g.transform.baseVal.consolidate()?.matrix;drag={g,sx:p.x,sy:p.y,x:m?.e||0,y:m?.f||0};g.classList.add('dragging');g.setPointerCapture(e.pointerId)});g.addEventListener('pointermove',e=>{if(!drag||drag.g!==g)return;const p=point(e);g.setAttribute('transform',`translate(${drag.x+p.x-drag.sx} ${drag.y+p.y-drag.sy})`)});g.addEventListener('pointerup',()=>{g.classList.remove('dragging');drag=null})}
+function addShackle(){const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.dataset.id='h-'+seq++;g.setAttribute('transform','translate(350 400)');g.innerHTML='<path d="M-22 8V-9c0-30 44-30 44 0V8" fill="none" stroke="#222d36" stroke-width="9"/><path d="M-30 9H30" stroke="#222d36" stroke-width="9"/><circle cx="-24" cy="9" r="6" fill="#8d99a3"/><circle cx="24" cy="9" r="6" fill="#8d99a3"/>';items.appendChild(g);bind(g);selected=g}
+function esc(v){return String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function addNote(){const text=prompt('Note text:','Attachment point');if(!text)return;const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.dataset.id='h-'+seq++;g.setAttribute('transform','translate(420 260)');g.innerHTML=`<rect x="-10" y="-28" width="180" height="48" rx="8" fill="#fff7c8" stroke="#7b6a24" stroke-width="2"/><text x="5" y="2" font-family="Arial" font-size="17" fill="#27251c">${esc(text.slice(0,22))}</text>`;items.appendChild(g);bind(g);selected=g}
+q('addHarnessShackle').addEventListener('click',addShackle);q('addHarnessNote').addEventListener('click',addNote);q('deleteHarnessItem').addEventListener('click',()=>{selected?.remove();selected=null});q('clearHarnessSheet').addEventListener('click',()=>{if(confirm('Remove all shackles and notes?'))items.innerHTML=''});
+window.SimpleRigHarness={getState(){return{sex:document.querySelector('input[name="harnessSex"]:checked')?.value||'male',options:{full:q('hFullBody').checked,legs:q('hLegCuffs').checked,ankles:q('hAnkleCuffs').checked,last:q('hLastResort').checked,martial:q('hMartialArts').checked},title:q('harnessTitle').value,performer:q('harnessPerformerName').value,notes:q('harnessGeneralNotes').value,items:items.innerHTML}},setState(s){if(!s)return;const sex=document.querySelector(`input[name="harnessSex"][value="${s.sex||'male'}"]`);if(sex){sex.checked=true;sex.dispatchEvent(new Event('change'))}const map={full:'hFullBody',legs:'hLegCuffs',ankles:'hAnkleCuffs',last:'hLastResort',martial:'hMartialArts'};Object.entries(map).forEach(([k,id])=>{q(id).checked=!!s.options?.[k];q(id).dispatchEvent(new Event('change'))});q('harnessTitle').value=s.title||'Harness Reference';q('harnessPerformerName').value=s.performer||'';q('harnessGeneralNotes').value=s.notes||'';items.innerHTML=s.items||'';items.querySelectorAll('.harness-item').forEach(bind)},isActive(){return q('workspaceHarness').classList.contains('active')},show:showHarness};
+})();
+</script>
+
+<script id="simpleRigProjectSystem">
+(()=>{
+'use strict';
+const byId=id=>document.getElementById(id);
+const panel=byId('projectPanel');
+const STORAGE_KEY='SimpleRigProjects_v1';
+let projects=[];
+let activeProjectId=null;
+let selectedFileId=null;
+let dragInfo=null;
+
+function uid(prefix){return prefix+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)}
+function nowISO(){return new Date().toISOString()}
+function activeWorkspace(){
+  return byId('workspaceHarness')?.classList.contains('active')?'harness':(byId('workspace3d')?.classList.contains('active')?'3d':'2d');
+}
+function safeParse(value,fallback){try{return JSON.parse(value)}catch{return fallback}}
+function persist(){
+  try{
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify({projects,activeProjectId}))}catch(error){throw error};
+    setStatus('Saved in this browser.');
+  }catch(error){
+    setStatus('Browser storage is full. Export the project to keep it safe.');
+    console.warn(error);
+  }
+}
+function loadPersisted(){
+  let raw=null;try{raw=localStorage.getItem(STORAGE_KEY)}catch(_){}const saved=safeParse(raw,null);
+  if(saved&&Array.isArray(saved.projects)){projects=saved.projects;activeProjectId=saved.activeProjectId||projects[0]?.id||null}
+}
+function setStatus(text){const el=byId('projectStatus');if(el)el.textContent=text}
+function getActiveProject(){return projects.find(p=>p.id===activeProjectId)||null}
+function updateBadge(){
+  const project=getActiveProject();
+  byId('activeProjectBadge').textContent=project?'Project: '+project.name:'No active project';
+}
+function capture2DState(){
+  const drawing=byId('drawing');
+  const fields=['showName','gagName','location','planDate','loadKg','systemRatio','assistRatio','efficiency'];
+  const values={};
+  fields.forEach(id=>{const el=byId(id);if(el)values[id]=el.value});
+  return {
+    svg:drawing?drawing.innerHTML:'',
+    background:byId('backgroundImage')?.getAttribute('href')||'',
+    showNames:!!byId('show2dNames')?.checked,
+    fields:values
+  };
+}
+function restore2DState(state){
+  if(!state)return;
+  const drawing=byId('drawing');
+  if(drawing&&typeof state.svg==='string'){
+    drawing.innerHTML=state.svg;
+    if(typeof window.rebindAll==='function')window.rebindAll();
+    else if(typeof rebindAll==='function')rebindAll();
+    if(typeof window.update2DObjectNames==='function')window.update2DObjectNames();
+    else if(typeof update2DObjectNames==='function')update2DObjectNames();
+  }
+  const bg=byId('backgroundImage');if(bg&&state.background)bg.setAttribute('href',state.background);
+  const toggle=byId('show2dNames');if(toggle){toggle.checked=!!state.showNames;toggle.dispatchEvent(new Event('change'))}
+  Object.entries(state.fields||{}).forEach(([id,value])=>{const el=byId(id);if(el){el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}))}});
+}
+function captureWorkspaceState(workspace){
+  if(workspace==='3d'){window.SimpleRig3D?.ensureReady();return window.SimpleRig3D?.getState()||null}
+  if(workspace==='harness')return window.SimpleRigHarness?.getState()||null;
+  return capture2DState();
+}
+function restoreWorkspaceFile(file){
+  if(!file)return;
+  if(file.workspace==='3d'){byId('switch3d')?.click();requestAnimationFrame(()=>window.SimpleRig3D?.setState(file.state))}
+  else if(file.workspace==='harness'){byId('switchHarness')?.click();requestAnimationFrame(()=>window.SimpleRigHarness?.setState(file.state))}
+  else{byId('switch2d')?.click();restore2DState(file.state)}
+  selectedFileId=file.id;
+  byId('timelineFileName').value=file.name;
+  renderTimeline();
+  setStatus('Opened '+file.name+'.');
+}
+function createProject(){
+  const input=byId('newProjectName');
+  const name=input.value.trim()||'Untitled project';
+  const project={id:uid('project'),name,createdAt:nowISO(),updatedAt:nowISO(),files:[]};
+  projects.push(project);activeProjectId=project.id;selectedFileId=null;input.value='';
+  persist();renderAll();
+}
+function saveCurrentPlan(overwrite=false){
+  const project=getActiveProject();
+  if(!project){setStatus('Create or select a project first.');return}
+  const requested=byId('timelineWorkspace').value;
+  const workspace=requested==='current'?activeWorkspace():requested;
+  const name=byId('timelineFileName').value.trim()||`${workspace.toUpperCase()} plan ${project.files.length+1}`;
+  const state=captureWorkspaceState(workspace);
+  if(!state){setStatus('Could not capture the selected workspace.');return}
+  if(overwrite&&selectedFileId){
+    const file=project.files.find(f=>f.id===selectedFileId);
+    if(file){
+      file.name=name;file.workspace=workspace;file.state=state;file.updatedAt=nowISO();
+      setStatus('Updated '+name+'.');
+    }
+  }else{
+    const maxPosition=project.files.reduce((m,f)=>Math.max(m,Number(f.position)||0),-1);
+    const file={id:uid('file'),name,workspace,state,position:maxPosition+1,createdAt:nowISO(),updatedAt:nowISO()};
+    project.files.push(file);selectedFileId=file.id;setStatus('Saved '+name+' to the timeline.');
+  }
+  project.updatedAt=nowISO();persist();renderAll();
+}
+function deleteSelected(){
+  const project=getActiveProject();if(!project||!selectedFileId)return;
+  project.files=project.files.filter(f=>f.id!==selectedFileId);
+  project.files.sort((a,b)=>a.position-b.position).forEach((f,i)=>f.position=i);
+  selectedFileId=null;project.updatedAt=nowISO();persist();renderAll();
+}
+function renderProjects(){
+  const host=byId('projectList');host.innerHTML='';
+  projects.forEach(project=>{
+    const card=document.createElement('div');card.className='project-card'+(project.id===activeProjectId?' active':'');
+    card.innerHTML=`<strong>${escapeHtml(project.name)}</strong><small>${project.files.length} plan${project.files.length===1?'':'s'} · ${new Date(project.updatedAt).toLocaleDateString('en-GB')}</small>`;
+    card.addEventListener('click',()=>{activeProjectId=project.id;selectedFileId=null;persist();renderAll()});
+    host.appendChild(card);
+  });
+}
+function renderTimeline(){
+  const project=getActiveProject(),items=byId('timelineItems'),empty=byId('timelineEmpty');
+  items.innerHTML='';
+  if(!project||!project.files.length){empty.style.display='grid';return}
+  empty.style.display='none';
+  const files=[...project.files].sort((a,b)=>a.position-b.position);
+  const usable=Math.max(620,files.length*185);
+  byId('projectTimeline').style.minWidth=Math.min(usable,1400)+'px';
+  files.forEach((file,index)=>{
+    const slot=document.createElement('div');slot.className='timeline-slot';slot.dataset.id=file.id;
+    const left=files.length===1?50:8+(index/(files.length-1))*84;
+    slot.style.left=left+'%';
+    slot.innerHTML=`<div class="timeline-card ${file.id===selectedFileId?'active':''}">
+      <strong>${escapeHtml(file.name)}</strong>
+      <small>${file.workspace.toUpperCase()} workspace</small>
+      <small>${new Date(file.updatedAt).toLocaleString('en-GB')}</small>
+    </div><div class="timeline-stem"></div><div class="timeline-dot"></div>`;
+    slot.addEventListener('click',event=>{if(dragInfo?.moved)return;restoreWorkspaceFile(file)});
+    slot.addEventListener('pointerdown',event=>{
+      dragInfo={id:file.id,startX:event.clientX,moved:false};
+      slot.classList.add('dragging');slot.setPointerCapture(event.pointerId);
+    });
+    slot.addEventListener('pointermove',event=>{
+      if(!dragInfo||dragInfo.id!==file.id)return;
+      if(Math.abs(event.clientX-dragInfo.startX)>5)dragInfo.moved=true;
+      if(!dragInfo.moved)return;
+      const timelineRect=byId('projectTimeline').getBoundingClientRect();
+      const pct=Math.max(5,Math.min(95,(event.clientX-timelineRect.left)/timelineRect.width*100));
+      slot.style.left=pct+'%';
+    });
+    slot.addEventListener('pointerup',event=>{
+      slot.classList.remove('dragging');
+      if(dragInfo?.moved){
+        const rect=byId('projectTimeline').getBoundingClientRect();
+        const pct=(event.clientX-rect.left)/rect.width;
+        const target=Math.max(0,Math.min(files.length-1,Math.round(pct*(files.length-1))));
+        const ordered=[...files];const from=ordered.findIndex(f=>f.id===file.id);const [moved]=ordered.splice(from,1);ordered.splice(target,0,moved);
+        ordered.forEach((f,i)=>f.position=i);project.files=ordered;project.updatedAt=nowISO();persist();renderTimeline();
+      }
+      setTimeout(()=>dragInfo=null,0);
+    });
+    items.appendChild(slot);
+  });
+}
+function renderAll(){renderProjects();renderTimeline();updateBadge()}
+function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+function exportProject(){
+  const project=getActiveProject();if(!project){setStatus('Select a project to export.');return}
+  const payload={format:'SimpleRigProject',version:1,exportedAt:nowISO(),project};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(project.name.replace(/[^a-z0-9_-]+/gi,'-')||'project')+'.simplerig';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  setStatus('Project exported.');
+}
+function importProject(file){
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const payload=JSON.parse(reader.result);
+      const project=payload.project||payload;
+      if(!project||!Array.isArray(project.files))throw new Error('Invalid project');
+      project.id=uid('project');project.name=(project.name||'Imported project')+' (imported)';project.updatedAt=nowISO();
+      project.files.forEach((f,i)=>{f.id=uid('file');f.position=i});
+      projects.push(project);activeProjectId=project.id;selectedFileId=null;persist();renderAll();setStatus('Project imported.');
+    }catch(error){setStatus('That file is not a valid SimpleRig project.')}
+  };
+  reader.readAsText(file);
+}
+
+// Active-workspace image for PDF.
+window.SimpleRigCaptureActiveWorkspace=async function(){
+  const workspace=activeWorkspace();
+  if(workspace==='3d'){
+    window.SimpleRig3D?.ensureReady();
+    return {workspace:'3d',dataUrl:window.SimpleRig3D?.captureDataURL()};
+  }
+  if(typeof window.renderSvgToJpeg==='function')return {workspace:'2d',dataUrl:await window.renderSvgToJpeg()};
+  // Independent fallback capture of 2D SVG.
+  const svg=byId('drawing')?.closest('svg')||byId('drawing');
+  if(!svg)return {workspace:'2d',dataUrl:null};
+  const clone=svg.cloneNode(true);clone.querySelectorAll('.selection,.rig-handle,.rig-hit,.touch-target').forEach(el=>el.remove());
+  const data=new XMLSerializer().serializeToString(clone);
+  const blob=new Blob([data],{type:'image/svg+xml'}),url=URL.createObjectURL(blob),img=new Image();
+  await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});
+  const c=document.createElement('canvas');c.width=1600;c.height=1000;const cx=c.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,c.width,c.height);cx.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+  return {workspace:'2d',dataUrl:c.toDataURL('image/jpeg',.94)};
+};
+
+// Replace PDF button behaviour in capture phase so active workspace is always used.
+byId('downloadPdfBtn')?.addEventListener('click',async event=>{
+  event.preventDefault();event.stopImmediatePropagation();
+  const captured=await window.SimpleRigCaptureActiveWorkspace();
+  if(!captured.dataUrl){alert('Could not capture the current workspace.');return}
+  const bytes=Uint8Array.from(atob(captured.dataUrl.split(',')[1]),c=>c.charCodeAt(0));
+  const img=new Image();img.src=captured.dataUrl;await img.decode();
+  const equipment=[];
+  const ratio={
+    load:Number(byId(captured.workspace==='3d'?'sr3Load':'loadKg')?.value)||0,
+    main:Number(byId(captured.workspace==='3d'?'sr3Ratio':'systemRatio')?.value)||1,
+    assist:Number(byId('assistRatio')?.value)||1,
+    eff:Number(byId(captured.workspace==='3d'?'sr3Efficiency':'efficiency')?.value)||100,
+    tension:'—',pull:byId(captured.workspace==='3d'?'sr3Pull':'pullResult')?.textContent||'—'
+  };
+  const details={
+    show:byId('showName')?.value||'Rig Plan',
+    gag:byId('gagName')?.value||'',
+    location:byId('location')?.value||''
+  };
+  if(typeof window.buildSinglePagePdf!=='function'){alert('PDF generator is unavailable.');return}
+  const blob=window.buildSinglePagePdf(bytes,img.naturalWidth||1600,img.naturalHeight||1000,equipment,ratio,details);
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(details.show||'rig-plan').replace(/[^a-z0-9_-]+/gi,'-')+'-'+captured.workspace+'.pdf';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+},true);
+
+
+byId('saveCurrentToProjectBtn').addEventListener('click',()=>{if(!getActiveProject()){panel.classList.add('open');panel.setAttribute('aria-hidden','false');renderAll();setStatus('Create or select a project, then press Save current plan.');return}byId('timelineWorkspace').value='current';if(!byId('timelineFileName').value.trim())byId('timelineFileName').value=(activeWorkspace()==='harness'?'Harness reference':activeWorkspace().toUpperCase()+' plan');saveCurrentPlan(false)});
+byId('saveHarnessToProject').addEventListener('click',()=>{byId('timelineWorkspace').value='harness';byId('timelineFileName').value=byId('harnessTitle').value.trim()||'Harness Reference';if(!getActiveProject()){panel.classList.add('open');panel.setAttribute('aria-hidden','false');renderAll();setStatus('Create or select a project, then save the harness sheet.')}else saveCurrentPlan(false)});
+
+byId('openProjectsBtn').addEventListener('click',()=>{panel.classList.add('open');panel.setAttribute('aria-hidden','false');renderAll()});
+byId('closeProjectsBtn').addEventListener('click',()=>{panel.classList.remove('open');panel.setAttribute('aria-hidden','true')});
+byId('createProjectBtn').addEventListener('click',createProject);
+byId('newProjectName').addEventListener('keydown',e=>{if(e.key==='Enter')createProject()});
+byId('saveToProjectBtn').addEventListener('click',()=>saveCurrentPlan(false));
+byId('overwriteProjectFileBtn').addEventListener('click',()=>saveCurrentPlan(true));
+byId('deleteProjectFileBtn').addEventListener('click',deleteSelected);
+byId('exportProjectBtn').addEventListener('click',exportProject);
+byId('importProjectFile').addEventListener('change',e=>{if(e.target.files[0])importProject(e.target.files[0]);e.target.value=''});
+loadPersisted();renderAll();
+})();
+</script>
+
+
+<script id="simpleRigLiveSimulation">
+(()=>{
+'use strict';
+const q=id=>document.getElementById(id);
+let live=false,snapshot2d=null,snapshot3d=null,workspaceAtStart=null;
+function workspace(){
+  if(q('workspaceHarness')?.classList.contains('active'))return 'harness';
+  return q('workspace3d')?.classList.contains('active')?'3d':'2d'
+}
+function apiFor(ws){return ws==='3d'?window.SimpleRig3D:ws==='2d'?window.SimpleRig2D:null}
+function update(){
+  const bar=q('liveBar'),text=q('liveStateText'),toggle=q('toggleLiveBtn'),apply=q('applyLiveForceBtn'),reset=q('resetLiveBtn');
+  bar.classList.toggle('live',live);text.textContent=live?'LIVE — simulation armed':'Live mode off';toggle.textContent=live?'Exit live':'Go live';
+  apply.disabled=!live;reset.disabled=!live;
+}
+function enter(){
+  const ws=workspace();if(ws==='harness'){q('liveReadout').textContent='Live simulation is available in the 2D and 3D workspaces.';return}
+  workspaceAtStart=ws;
+  snapshot2d=window.SimpleRig2D?.getState()||null;
+  snapshot3d=window.SimpleRig3D?.getState()||null;
+  live=true;
+  window.SimpleRig2D?.captureFiniteLines?.();
+  update();
+  q('liveReadout').textContent=`${ws.toUpperCase()} simulation armed. Rope lengths are now finite and the current rig state has been captured for reset.`
+}
+function reset(){
+  if(snapshot2d)window.SimpleRig2D?.setState(snapshot2d);
+  if(snapshot3d)window.SimpleRig3D?.setState(snapshot3d);
+  q('liveReadout').textContent='Rig restored to its pre-simulation state.'
+}
+function exit(){
+  live=false;window.SimpleRig2D?.clearFiniteLines?.();update();q('liveReadout').textContent='Live mode off. Use Reset before exiting if you want to undo the simulation.'
+}
+q('toggleLiveBtn').addEventListener('click',()=>live?exit():enter());
+q('resetLiveBtn').addEventListener('click',reset);
+q('applyLiveForceBtn').addEventListener('click',()=>{
+  if(!live)return;
+  const ws=workspace(),api=apiFor(ws),force=Math.max(0,Number(q('liveForceKn').value)||0),duration=Math.max(.05,Number(q('liveDuration').value)||.5);
+  if(!api){q('liveReadout').textContent='Live simulation is only available in 2D and 3D.';return}
+  const result=api.simulate(force,duration);
+  q('liveReadout').textContent=result.message;
+});
+['switch2d','switch3d','switchHarness'].forEach(id=>q(id)?.addEventListener('click',()=>{if(live)q('liveReadout').textContent='Live mode remains armed. Apply force in the current 2D or 3D workspace, or reset the captured rig.'}));
+window.addEventListener('simplerig-operating-change',()=>{if(!live)q('liveReadout').textContent='Operating point updated. Go live to apply force.'});
+window.SimpleRigLive={isLive(){return live},reset,enter,exit};
+update();
+})();
+</script>
+
+</body>
+</html>

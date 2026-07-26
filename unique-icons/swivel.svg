@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 105">
-<rect width="120" height="105" rx="10" fill="#eef2f5"/>
-<g fill="#657785" stroke="#17212b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M31 77V38c0-28 58-28 58 0v39" fill="none" stroke-width="11"/><path d="M22 78h76" fill="none" stroke-width="9"/></g>
-<text x="60" y="98" text-anchor="middle" font-family="Arial,sans-serif" font-size="8.5" font-weight="700" fill="#17212b">Swivel</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+<rect width="160" height="120" rx="12" fill="#eef2f5"/>
+<g stroke="#17212b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="80" cy="43" r="22" fill="#7d8b96"/><circle cx="80" cy="43" r="9" fill="#eef2f5"/><path d="M67 63v20h26V63" fill="#8d99a3"/><circle cx="80" cy="86" r="9" fill="#eef2f5"/></g>
+<text x="80" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#17212b">Swivel</text>
 </svg>

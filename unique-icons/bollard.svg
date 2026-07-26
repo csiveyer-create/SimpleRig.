@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 105">
-<rect width="120" height="105" rx="10" fill="#eef2f5"/>
-<g fill="#657785" stroke="#17212b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><rect x="26" y="29" width="68" height="49" rx="9"/><circle cx="60" cy="54" r="14" fill="#eef2f5"/></g>
-<text x="60" y="98" text-anchor="middle" font-family="Arial,sans-serif" font-size="8.5" font-weight="700" fill="#17212b">Bollard</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+<rect width="160" height="120" rx="12" fill="#eef2f5"/>
+<g stroke="#17212b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="80" cy="28" rx="31" ry="12" fill="#788692"/><path d="M49 28v48c0 17 62 17 62 0V28" fill="#8e9aa4"/><ellipse cx="80" cy="76" rx="31" ry="12" fill="#65737f"/><path d="M38 84h84" fill="none"/></g>
+<text x="80" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#17212b">Bollard</text>
 </svg>

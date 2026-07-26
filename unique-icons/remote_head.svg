@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 105">
-<rect width="120" height="105" rx="10" fill="#eef2f5"/>
-<g fill="#657785" stroke="#17212b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><rect x="26" y="29" width="68" height="49" rx="9"/><circle cx="60" cy="54" r="14" fill="#eef2f5"/></g>
-<text x="60" y="98" text-anchor="middle" font-family="Arial,sans-serif" font-size="8.5" font-weight="700" fill="#17212b">Remote Head</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+<rect width="160" height="120" rx="12" fill="#eef2f5"/>
+<g stroke="#17212b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M55 78h50" fill="none" stroke-width="10"/><path d="M80 78V43" fill="none" stroke-width="9"/><path d="M55 43h50v28H55z" fill="#303b45"/><circle cx="92" cy="57" r="10" fill="#7798b7"/><path d="M48 91h64" fill="none"/></g>
+<text x="80" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#17212b">Remote Camera Head</text>
 </svg>
