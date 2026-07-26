@@ -1,0 +1,42 @@
+{
+  "javascript": [
+    {
+      "script": 0,
+      "passed": true,
+      "error": ""
+    },
+    {
+      "script": 1,
+      "passed": true,
+      "error": ""
+    },
+    {
+      "script": 2,
+      "passed": true,
+      "error": ""
+    },
+    {
+      "script": 3,
+      "passed": true,
+      "error": ""
+    },
+    {
+      "script": 4,
+      "passed": true,
+      "error": ""
+    },
+    {
+      "script": 5,
+      "passed": true,
+      "error": ""
+    }
+  ],
+  "all_javascript_passed": true,
+  "duplicate_ids": [
+    "${near.rig.dataset.id}",
+    "${rigId}",
+    "${selected.dataset.rigId}"
+  ],
+  "missing_local_assets": [],
+  "harness_reference_updated": true
+}

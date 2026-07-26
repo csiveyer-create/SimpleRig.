@@ -1,10 +1,20 @@
-# SimpleRig update
+# SimpleRig — Latest Checked Build
 
-- Supplied reference photos replaced by eight original transparent SVG assets.
-- Delete, Undo and Redo rebuilt with persistent object IDs.
-- Keyboard shortcuts added: Delete/Backspace, Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z and Ctrl/Cmd+Y.
-- Catalogue reduced to verified manufacturer records only.
-- Every catalogue record contains a numerical manufacturer-published MBS/strength rating.
-- Unverified generic records were removed instead of inventing safety values.
+Open `index.html` in a modern desktop browser.
 
-The catalogue remains a planning reference. Confirm the exact model, configuration and current manufacturer documentation before use.
+Included:
+- 2D rig workspace
+- 3D visualisation workspace
+- 3D object rotation and layers
+- Projects and draggable timeline
+- Active-workspace PDF export
+- Harness Reference page
+- Operating-point analysis
+- 2D/3D Live simulation with kN force input and reset
+- Self-contained unique equipment icons
+
+Important:
+The Live mode is a simplified preview, not a certified engineering or stunt-rigging solver.
+
+## Harness Reference update
+The full-body harness illustration has been redrawn from the user-supplied Climbing Sutra reference, fitted to the basic grey male/female performer outline.

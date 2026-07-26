@@ -1,0 +1,11 @@
+{
+  "build": "SimpleRig-Latest-Checked",
+  "javascript_syntax_passed": true,
+  "duplicate_html_ids": [],
+  "missing_local_assets": [],
+  "browser_function_checks_passed": true,
+  "console_errors": [],
+  "page_errors": [],
+  "checks_run": 22,
+  "sha256_index_html": "3f3dc608ce62c6d8407b8e204abbe213282dc0ae4e30e4196311d7a0d3f36715"
+}
