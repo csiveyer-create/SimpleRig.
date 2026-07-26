@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
-<rect width="160" height="120" rx="12" fill="#eef2f5"/>
-<g stroke="#17212b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><rect x="32" y="48" width="96" height="42" rx="7" fill="#394652"/><circle cx="80" cy="57" r="26" fill="#697985"/><circle cx="80" cy="57" r="15" fill="#202a33"/><path d="M35 91h90M112 34h17v28" fill="none"/></g>
-<text x="80" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#17212b">Stage Winch</text>
-</svg>
