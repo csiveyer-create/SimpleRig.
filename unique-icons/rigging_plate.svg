@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+<rect width="160" height="120" rx="12" fill="#eef2f5"/>
+<g stroke="#17212b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M45 23h70l13 57-48 18-48-18z" fill="#687884"/><circle cx="80" cy="42" r="8" fill="#eef2f5"/><circle cx="57" cy="70" r="8" fill="#eef2f5"/><circle cx="80" cy="78" r="8" fill="#eef2f5"/><circle cx="103" cy="70" r="8" fill="#eef2f5"/></g>
+<text x="80" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#17212b">Rigging Plate</text>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+<rect width="160" height="120" rx="12" fill="#eef2f5"/>
+<g stroke="#17212b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M52 20h48l14 17-12 55H55L43 74l11-19-10-18z" fill="#cc5548"/><circle cx="78" cy="50" r="10" fill="#e9edf0"/><circle cx="78" cy="77" r="9" fill="#e9edf0"/></g>
+<text x="80" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#17212b">Descender</text>
+</svg>
