@@ -1,0 +1,43 @@
+{
+  "checks": {
+    "3d_routes_by_asset_id": true,
+    "no_generic_black_box_fallback": true,
+    "add_rig_guard_for_attached_end": true,
+    "endpoint_attach_does_not_mutate_points": true,
+    "live_endpoint_transfer_solver": true,
+    "opposite_end_retraction_status": true,
+    "javascript_syntax": true
+  },
+  "javascript": [
+    {
+      "script": 0,
+      "passed": true,
+      "error": ""
+    },
+    {
+      "script": 1,
+      "passed": true,
+      "error": ""
+    },
+    {
+      "script": 2,
+      "passed": true,
+      "error": ""
+    },
+    {
+      "script": 3,
+      "passed": true,
+      "error": ""
+    },
+    {
+      "script": 4,
+      "passed": true,
+      "error": ""
+    },
+    {
+      "script": 5,
+      "passed": true,
+      "error": ""
+    }
+  ]
+}

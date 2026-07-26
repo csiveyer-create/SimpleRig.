@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+<rect width="160" height="120" rx="12" fill="#eef2f5"/>
+<g stroke="#17212b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M53 22h48l13 17-11 50H57L45 72l10-17-9-16z" fill="#c8d0d6"/><path d="M72 35l21 14-17 23" fill="none"/><path d="M102 18v75" stroke="#d14b4b" fill="none"/></g>
+<text x="80" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#17212b">Rope Grab</text>
+</svg>

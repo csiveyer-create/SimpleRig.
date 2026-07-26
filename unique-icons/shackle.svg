@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
+<rect width="160" height="120" rx="12" fill="#eef2f5"/>
+<g stroke="#17212b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M52 68V45c0-35 56-35 56 0v23" fill="none" stroke-width="10"/><path d="M42 68h76" fill="none" stroke-width="10"/><circle cx="48" cy="68" r="7" fill="#7d8a95"/><circle cx="112" cy="68" r="7" fill="#7d8a95"/></g>
+<text x="80" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#17212b">Bow Shackle</text>
+</svg>
