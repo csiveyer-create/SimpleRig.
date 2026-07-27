@@ -1,6 +1,0 @@
-Replace the previous GitHub Pages build completely.
-
-Upload the CONTENTS of SimpleRig-v3-Advanced-Rigging so that index.html is in the repository root.
-After deployment, confirm the top bar displays “Advanced Rigging v3.1”.
-
-AR camera access requires HTTPS and browser permission. GitHub Pages supplies HTTPS.
