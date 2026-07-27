@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
-<rect width="160" height="120" rx="12" fill="#eef2f5"/>
-<g stroke="#17212b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M43 18h74l10 22-12 52H45L33 40z" fill="#7c8994"/><circle cx="72" cy="63" r="24" fill="#dce3e8"/><path d="M94 39l19 13-19 13z" fill="#d94b4b"/><circle cx="72" cy="63" r="8" fill="#485866"/></g>
-<text x="80" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#17212b">Progress Capture Pulley</text>
-</svg>

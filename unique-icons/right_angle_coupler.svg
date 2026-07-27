@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
-<rect width="160" height="120" rx="12" fill="#eef2f5"/>
-<g stroke="#17212b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><rect x="31" y="48" width="98" height="18" rx="8" fill="#89959e"/><rect x="71" y="15" width="18" height="90" rx="8" fill="#89959e"/><circle cx="80" cy="57" r="19" fill="#687681"/><circle cx="80" cy="57" r="7" fill="#dbe2e7"/></g>
-<text x="80" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#17212b">Right-Angle Coupler</text>
-</svg>

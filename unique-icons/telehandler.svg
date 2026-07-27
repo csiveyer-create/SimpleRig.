@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120">
-<rect width="160" height="120" rx="12" fill="#eef2f5"/>
-<g stroke="#17212b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="48" cy="83" r="18" fill="#222b33"/><circle cx="111" cy="83" r="18" fill="#222b33"/><path d="M30 78l12-36h56l22 24-3 20H34z" fill="#d8a72d"/><path d="M61 44h28l16 20H57z" fill="#5b778b"/><path d="M84 41l34-8 4 13-34 13" fill="#d5a52c"/><path d="M118 33l15-4M122 46l15-1" fill="none"/></g>
-<text x="80" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#17212b">Telehandler</text>
-</svg>
