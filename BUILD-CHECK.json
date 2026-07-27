@@ -1,0 +1,66 @@
+{
+  "checks": {
+    "build_badge": true,
+    "advanced_options_removed": true,
+    "build_this": true,
+    "full_localisation": true,
+    "constraint_rope": true,
+    "3d_measurement": true,
+    "missing_references": [
+      "icons/icon-180.png"
+    ],
+    "all_js_valid": true
+  },
+  "scripts": [
+    {
+      "file": "js/sr3Standalone.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "js/simpleRigProjectSystem.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "js/script-02.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "js/fullLocalisation.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "js/simpleRigLiveSimulation.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "js/script-01.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "js/harnessReferenceSystem.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "js/coreSyncMetricRope.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "js/simpleLoadCalculator.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "js/appUiEnhancements.js",
+      "passed": true,
+      "error": ""
+    }
+  ]
+}

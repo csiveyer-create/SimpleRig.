@@ -1,0 +1,53 @@
+{
+  "checks": {
+    "force_calculator_visible": true,
+    "old_weight_title_removed": true,
+    "version_badge": true,
+    "cache_busted": true,
+    "service_worker_unregister": true,
+    "cache_clear": true
+  },
+  "scripts": [
+    {
+      "file": "appUiEnhancements.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "harnessReferenceSystem.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "script-01.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "script-02.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "simpleLoadCalculator.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "simpleRigLiveSimulation.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "simpleRigProjectSystem.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "sr3Standalone.js",
+      "passed": true,
+      "error": ""
+    }
+  ],
+  "passed": true
+}

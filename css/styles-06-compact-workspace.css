@@ -1,0 +1,207 @@
+
+:root{
+  --sr-sidebar:176px;
+  --sr-toolbar-size:30px;
+  --sr-gap:6px;
+}
+html,body{height:100%;overflow:hidden}
+body{margin:0;background:#070a0c}
+#rigApp{height:100%;display:flex;flex-direction:column;overflow:hidden}
+
+/* Workspace-first header */
+.app-command-bar{
+  min-height:38px!important;height:38px!important;padding:4px 7px!important;
+  display:flex!important;gap:6px!important;align-items:center!important;
+  border-bottom:1px solid #343b41!important;flex-wrap:nowrap!important;
+}
+.brand-block{min-width:auto!important;gap:5px!important}
+.brand-mark{width:25px!important;height:25px!important;font-size:13px!important}
+.brand-block strong{font-size:13px}
+.build-badge{font-size:9px!important;padding:2px 5px!important}
+.project-priority,.app-utilities{gap:4px!important}
+.project-priority button,.app-utilities button,.workspace-mode-switch button{
+  min-height:28px!important;padding:4px 8px!important;font-size:11px!important
+}
+.project-badge{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px!important}
+.language-control{font-size:0!important}
+.language-control select{height:28px!important;max-width:90px!important;font-size:11px!important;padding:2px 5px!important}
+.workspace-mode-switch{margin-left:auto}
+#switchHarness{display:none!important}
+
+/* Old full-width panels are converted to popovers or hidden */
+#liveBar,.production-details,#buildThisDock,.panel.toolbar{display:none!important}
+#simpleLoadCalculator,.simple-3d-load,.operating-panel,
+#openSimpleCalculator3d,.legacy-load-fields{display:none!important}
+
+/* New lightweight UI */
+.compact-command{
+  display:flex;align-items:center;gap:4px;margin-left:2px
+}
+.compact-command button{
+  min-height:28px;padding:4px 8px;font-size:11px
+}
+.workspace-popover{
+  position:fixed;z-index:1200;top:44px;left:8px;
+  width:min(430px,calc(100vw - 16px));max-height:calc(100vh - 58px);
+  overflow:auto;background:#101519;border:1px solid #59626a;border-radius:8px;
+  padding:9px;box-shadow:0 14px 38px #0009;color:#f3f5f6
+}
+.workspace-popover[hidden]{display:none!important}
+.workspace-popover .popover-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-bottom:7px;padding-bottom:6px;border-bottom:1px solid #363e44
+}
+.workspace-popover h3{font-size:12px;margin:0;text-transform:uppercase;letter-spacing:.08em}
+.workspace-popover label{font-size:11px}
+.workspace-popover input,.workspace-popover select{min-height:28px;font-size:11px;padding:4px 6px}
+.popover-actions{display:flex;gap:5px;flex-wrap:wrap}
+.popover-actions button{font-size:11px;min-height:28px;padding:4px 8px}
+
+/* 2D workspace fills remaining page */
+#workspace2d{
+  flex:1!important;min-height:0!important;display:grid!important;
+  grid-template-columns:minmax(0,1fr) var(--sr-sidebar)!important;
+  gap:0!important;padding:0!important;overflow:hidden!important;
+  position:relative!important
+}
+#workspace2d>section{
+  grid-column:1!important;grid-row:1!important;min-width:0!important;min-height:0!important;
+  display:flex!important;flex-direction:column!important;position:relative!important
+}
+#workspace2d>aside{
+  grid-column:2!important;grid-row:1!important;width:var(--sr-sidebar)!important;
+  min-width:var(--sr-sidebar)!important;max-width:var(--sr-sidebar)!important;
+  margin:0!important;border-radius:0!important;border-width:0 0 0 1px!important;
+  overflow:auto!important;padding:5px!important;font-size:9px!important
+}
+#workspace2d>aside .title{font-size:9px!important;margin:4px 0!important}
+#workspace2d>aside label,#workspace2d>aside input,#workspace2d>aside select,
+#workspace2d>aside button,#workspace2d>aside .small{font-size:9px!important}
+#workspace2d>aside input,#workspace2d>aside select,#workspace2d>aside button{
+  min-height:22px!important;padding:2px 4px!important
+}
+#workspace2d>aside .assetGrid,#workspace2d>aside #builtins{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:3px!important
+}
+#workspace2d>aside .assetBtn,#workspace2d>aside .asset-card,
+#workspace2d>aside [data-tool]{min-height:38px!important;padding:2px!important}
+.catalogue-count,.equipment-preview{font-size:8px!important;line-height:1.15!important}
+.equipment-preview{max-height:62px;overflow:auto}
+.custom-item-panel{font-size:9px!important}
+
+/* 2D stage */
+.canvasWrap{
+  flex:1!important;min-height:0!important;height:auto!important;margin:0!important;
+  border-radius:0!important;border:0!important;position:relative!important;background:#151a1e!important
+}
+#rigCanvas{width:100%!important;height:100%!important;display:block!important;background:#242a2f!important}
+.canvas-controls{
+  position:absolute!important;top:7px!important;right:7px!important;z-index:20!important;
+  gap:3px!important;padding:3px!important;border-radius:6px!important
+}
+.canvas-controls button{width:27px!important;height:27px!important;min-height:27px!important;padding:2px!important;font-size:10px!important}
+#status{position:absolute;left:8px;bottom:5px;z-index:22;margin:0!important;padding:3px 6px;
+  background:#080b0dcc;border:1px solid #444d54;border-radius:5px;color:#e9edef;font-size:9px!important;max-width:55%}
+.floating-2d-toolbar{
+  position:absolute;z-index:30;left:50%;bottom:10px;transform:translateX(-50%);
+  display:flex;gap:2px;padding:3px;background:#0b0f12e8;border:1px solid #5b646b;border-radius:7px
+}
+.floating-2d-toolbar button,.floating-2d-toolbar label{
+  width:var(--sr-toolbar-size)!important;height:var(--sr-toolbar-size)!important;
+  min-width:var(--sr-toolbar-size)!important;min-height:var(--sr-toolbar-size)!important;
+  padding:2px!important;font-size:0!important;display:grid!important;place-items:center!important
+}
+.floating-2d-toolbar button::before{font-size:14px!important}
+.floating-2d-toolbar .tool-select::before{content:"↖"}
+.floating-2d-toolbar .tool-line::before{content:"╱"}
+.floating-2d-toolbar .tool-rig::before{content:"〰"}
+.floating-2d-toolbar .tool-arrow::before{content:"➜"}
+.floating-2d-toolbar .tool-text::before{content:"T";font-weight:700}
+.floating-2d-toolbar .tool-measure::before{content:"↔"}
+.floating-2d-toolbar .tool-pan::before{content:"✥"}
+.floating-2d-toolbar .tool-delete::before{content:"⌫"}
+.floating-2d-toolbar .tool-undo::before{content:"↶"}
+.floating-2d-toolbar .tool-redo::before{content:"↷"}
+.live-measure-toggle{
+  width:auto!important;min-width:auto!important;padding:0 5px!important;font-size:9px!important;
+  display:flex!important;gap:3px!important;white-space:nowrap
+}
+.live-measure-toggle input{width:13px;height:13px}
+#liveLineMeasure{
+  position:absolute;z-index:40;pointer-events:none;padding:3px 6px;border-radius:5px;
+  background:#050709e8;border:1px solid #fff;color:#fff;font-size:11px;font-weight:700
+}
+
+/* White drawing content in the 2D workspace */
+#rigLineLayer [data-visible="true"],#rigLineLayer .constraint-rope{
+  stroke:#fff!important
+}
+#rigLineLayer text,#drawingLayer text,#selectionLayer text{fill:#fff!important;stroke:#111!important}
+#drawingLayer path,#drawingLayer line,#drawingLayer polyline,#drawingLayer circle,
+#drawingLayer rect,#drawingLayer ellipse,#drawingLayer polygon{
+  stroke:#fff!important
+}
+#drawingLayer image{filter:brightness(0) invert(1)!important}
+.constraint-node{fill:#181d21!important;stroke:#fff!important}
+.constraint-performer{stroke:#fff!important}
+.rig-handle{fill:#151a1e!important;stroke:#fff!important}
+
+/* Background calibration */
+.background-calibration{
+  position:absolute;z-index:35;top:8px;left:8px;width:220px;
+  background:#090d10eb;border:1px solid #5a646c;border-radius:7px;padding:7px;color:#fff
+}
+.background-calibration[hidden]{display:none!important}
+.background-calibration strong{font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.background-calibration p{font-size:9px;margin:4px 0;color:#c8d0d5}
+.background-calibration .row{display:flex;gap:4px;align-items:center}
+.background-calibration input{width:70px;min-height:25px;padding:3px;font-size:10px}
+.background-calibration button{min-height:25px;padding:3px 6px;font-size:9px}
+.background-calibration .locked{color:#9fe2ae}
+#backgroundImage.background-unlocked{pointer-events:auto!important;cursor:move}
+.calibration-line{stroke:#fff;stroke-width:3;stroke-dasharray:8 5}
+.calibration-point{fill:#111;stroke:#fff;stroke-width:3}
+
+/* 3D: same geography, narrow right library and floating half-size toolbar */
+#workspace3d{
+  flex:1!important;min-height:0!important;display:grid!important;
+  grid-template-columns:minmax(0,1fr) var(--sr-sidebar)!important;
+  grid-template-rows:minmax(0,1fr)!important;gap:0!important;padding:0!important;overflow:hidden!important
+}
+#workspace3d>.sr3-stage-shell{grid-column:1!important;grid-row:1!important;min-width:0!important;min-height:0!important}
+#workspace3d>aside:first-of-type{
+  grid-column:2!important;grid-row:1!important;width:var(--sr-sidebar)!important;
+  min-width:var(--sr-sidebar)!important;max-width:var(--sr-sidebar)!important;
+  padding:5px!important;border-radius:0!important;border-width:0 0 0 1px!important;
+  overflow:auto!important;font-size:9px!important
+}
+#workspace3d>aside:first-of-type h3{font-size:9px!important;margin:5px 0!important}
+#workspace3d>aside:first-of-type input,#workspace3d>aside:first-of-type select,
+#workspace3d>aside:first-of-type button,#workspace3d>aside:first-of-type label{
+  min-height:22px!important;padding:2px 4px!important;font-size:9px!important
+}
+#sr3Equipment{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:3px!important}
+#sr3Toolbar{
+  top:auto!important;bottom:10px!important;left:50%!important;right:auto!important;
+  transform:translateX(-50%)!important;display:flex!important;gap:2px!important;padding:3px!important
+}
+#sr3Toolbar button{
+  width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important;
+  padding:2px!important;font-size:13px!important
+}
+#sr3Toolbar small{display:none!important}
+.sr3-cube{transform:scale(.72);transform-origin:top right}
+.sr3-dims{position:absolute!important;left:7px!important;bottom:7px!important;width:min(430px,55%)!important;
+  padding:5px!important;border-radius:7px!important;background:#0b0f12e8!important}
+.sr3-dims label,.sr3-dims button,.sr3-dims span,.sr3-dims output{font-size:9px!important}
+.sr3-dims input{height:16px!important}
+#sr3MeasurePanel,#sr3Inspector{display:none!important}
+
+/* narrow screens */
+@media(max-width:760px){
+  :root{--sr-sidebar:128px}
+  .brand-block strong,.project-badge,#saveCurrentTopBtn{display:none!important}
+  .app-command-bar{overflow-x:auto}
+  #workspace2d>aside,#workspace3d>aside:first-of-type{font-size:8px!important}
+  .workspace-mode-switch button{padding:3px 5px!important}
+}

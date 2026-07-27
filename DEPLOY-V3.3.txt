@@ -1,0 +1,17 @@
+SimpleRig v3.3 Compact Workspace
+
+1. Delete the existing contents of the GitHub Pages repository.
+2. Upload the CONTENTS of this folder so index.html is in the repository root.
+3. Confirm the header badge reads “Compact Workspace v3.3”.
+4. Hard-refresh the deployed page if an older service worker or cached build appears.
+
+Key changes:
+- Workspace-first compact geography.
+- Narrow 2D and 3D equipment sidebars.
+- Floating half-size toolbars.
+- Automatic calculator interfaces removed.
+- Build This retained in a pop-up.
+- Live rope retained behind one Edit/Live control.
+- Live rig-line measurement with checkbox.
+- White 2D rig lines and objects.
+- Background must be calibrated before it can be locked.

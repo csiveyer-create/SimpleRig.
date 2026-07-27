@@ -1,0 +1,50 @@
+{
+  "scripts": [
+    {
+      "file": "appUiEnhancements.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "harnessReferenceSystem.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "script-01.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "script-02.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "simpleRigLiveSimulation.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "simpleRigProjectSystem.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "sr3Standalone.js",
+      "passed": true,
+      "error": ""
+    }
+  ],
+  "features": {
+    "dark_theme": true,
+    "languages": true,
+    "collapsible": true,
+    "tutorial": true,
+    "project_first": true,
+    "shackle_animation": true,
+    "harness_rotation": true,
+    "leaders": true
+  },
+  "passed": true
+}
