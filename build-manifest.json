@@ -1,0 +1,32 @@
+{
+  "name": "SimpleRig v3.5 Stable Workspace",
+  "entrypoint": "index.html",
+  "styles": [
+    "css/styles-01.css",
+    "css/styles-02.css",
+    "css/styles-03-dark-ui.css",
+    "css/styles-04-simple-loads.css",
+    "css/styles-05-core-sync.css",
+    "css/styles-08-workspace-rebuild.css",
+    "css/styles-09-stability-fix.css"
+  ],
+  "scripts": [
+    "js/script-01.js",
+    "js/script-02.js",
+    "js/sr3Standalone.js",
+    "js/harnessReferenceSystem.js",
+    "js/simpleRigProjectSystem.js",
+    "js/simpleRigLiveSimulation.js",
+    "js/appUiEnhancements.js",
+    "js/advancedRigging.js",
+    "js/workspaceRebuild.js"
+  ],
+  "github_pages": {
+    "relative_paths": true,
+    "nojekyll": true,
+    "root_index": true
+  },
+  "build": "stable-workspace-v3.5",
+  "cache_busting": "20260727-v3",
+  "service_worker_disabled": true
+}

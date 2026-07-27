@@ -1,0 +1,63 @@
+{
+  "passed": true,
+  "scripts": {
+    "appUiEnhancements.js": {
+      "passed": true,
+      "error": ""
+    },
+    "compactWorkspace.js": {
+      "passed": true,
+      "error": ""
+    },
+    "coreSyncMetricRope.js": {
+      "passed": true,
+      "error": ""
+    },
+    "fullLocalisation.js": {
+      "passed": true,
+      "error": ""
+    },
+    "harnessReferenceSystem.js": {
+      "passed": true,
+      "error": ""
+    },
+    "script-01.js": {
+      "passed": true,
+      "error": ""
+    },
+    "script-02.js": {
+      "passed": true,
+      "error": ""
+    },
+    "simpleLoadCalculator.js": {
+      "passed": true,
+      "error": ""
+    },
+    "simpleRigLiveSimulation.js": {
+      "passed": true,
+      "error": ""
+    },
+    "simpleRigProjectSystem.js": {
+      "passed": true,
+      "error": ""
+    },
+    "sr3Standalone.js": {
+      "passed": true,
+      "error": ""
+    },
+    "workspaceRebuild.js": {
+      "passed": true,
+      "error": ""
+    }
+  },
+  "features": {
+    "3d_compatibility_nodes_retained": true,
+    "3d_active_display_rule": true,
+    "harness_active_display_rule": true,
+    "sidebar_scrolling": true,
+    "force_calculator_hidden": true,
+    "live_force_script_removed": true,
+    "version_badge": true
+  },
+  "note": "JavaScript syntax and DOM/CSS integration rules checked. Interactive browser execution could not be automated in this environment."
+}
