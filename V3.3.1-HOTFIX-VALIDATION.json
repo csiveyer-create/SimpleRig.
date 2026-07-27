@@ -1,0 +1,74 @@
+{
+  "passed": true,
+  "scripts": [
+    {
+      "file": "appUiEnhancements.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "compactWorkspace.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "coreSyncMetricRope.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "fullLocalisation.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "harnessReferenceSystem.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "script-01.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "script-02.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "simpleLoadCalculator.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "simpleRigLiveSimulation.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "simpleRigProjectSystem.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "sr3Standalone.js",
+      "passed": true,
+      "error": ""
+    }
+  ],
+  "references": [
+    {
+      "file": "css/styles-06-compact-workspace.css",
+      "exists": true
+    },
+    {
+      "file": "js/compactWorkspace.js",
+      "exists": true
+    },
+    {
+      "file": "js/fullLocalisation.js",
+      "exists": true
+    }
+  ]
+}
