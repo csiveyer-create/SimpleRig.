@@ -1,0 +1,62 @@
+{
+  "features": {
+    "light_canvas": true,
+    "physics": true,
+    "fixed_rope": true,
+    "snapping": true,
+    "auto_route": true,
+    "build_this": true,
+    "telehandlers": true,
+    "performer_envelope": true,
+    "camera_mode": true,
+    "ar": true
+  },
+  "scripts": [
+    {
+      "file": "advancedRigging.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "appUiEnhancements.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "harnessReferenceSystem.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "script-01.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "script-02.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "simpleLoadCalculator.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "simpleRigLiveSimulation.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "simpleRigProjectSystem.js",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "file": "sr3Standalone.js",
+      "passed": true,
+      "error": ""
+    }
+  ],
+  "passed": true
+}
