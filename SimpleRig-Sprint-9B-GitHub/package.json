@@ -1,0 +1,10 @@
+{
+  "name": "simplerig-sprint-9b",
+  "version": "9.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/model.test.js",
+    "serve": "python3 -m http.server 8000"
+  }
+}
