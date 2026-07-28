@@ -1,1 +1,0 @@
-Delete the old GitHub repository contents and upload the contents of this folder. index.html must be in the repository root. The badge should read Workspace Rebuild v3.4.
